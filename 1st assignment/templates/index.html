@@ -7,7 +7,7 @@
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
       <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
    </head>
-   <body>
+   <body>   
       <div class="container">
          <div class="section">
             <h1>Maze Pathfinding Visualization</h1>
@@ -187,8 +187,7 @@
              // Enhance UI for A* visualization
              if (algorithm === 'astar') {
                  const dataStructureContainer = document.getElementById('data-structure-container');
-                 dataStructureContainer.style.minHeight = '400px'; // Give more space for tree
-             }
+                 }
              
              fetch('/solve', {
                  method: 'POST',
