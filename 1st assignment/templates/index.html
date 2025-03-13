@@ -7,7 +7,7 @@
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
       <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
    </head>
-   <body>   
+   <body>
       <div class="container">
          <div class="section">
             <h1>Maze Pathfinding Visualization</h1>
@@ -764,116 +764,116 @@
          }
          
          // Add global variables for pause functionality
-let isPaused = false;
-let remainingAnimationSteps = [];
-let currentAnimationDelay = 500;
-
-function startAnimation(explored, path, algorithm) {
-    exploredNodes = explored;
-    pathNodes = path;
-
-    // Generate algorithm steps
-    generateAlgorithmSteps(algorithm, explored, path);
-
-    const speed = document.getElementById('speed').value;
-    currentAnimationDelay = 1000 - speed; // Invert so higher value = faster
-
-    currentAnimationStep = 0;
-
-    // Clear any existing interval
-    if (animationInterval) {
-        clearInterval(animationInterval);
-        animationInterval = null;
-    }
-
-    // Start the animation
-    animateStep();
-}
-
-function animateStep() {
-    if (currentAnimationStep < exploredNodes.length) {
-        // Exploration phase
-        const nodeId = exploredNodes[currentAnimationStep];
-        highlightNode(nodeId, 'visited');
-        updateAlgorithmStep(currentAnimationStep);
-        currentAnimationStep++;
-    } else if (currentAnimationStep < exploredNodes.length + pathNodes.length) {
-        // Path tracing phase
-        const pathIndex = currentAnimationStep - exploredNodes.length;
-        const nodeId = pathNodes[pathIndex];
-        highlightNode(nodeId, 'in-path');
-        positionRobotAtNode(nodeId);
-        updateAlgorithmStep(currentAnimationStep);
-        currentAnimationStep++;
-    } else {
-        // Animation complete
-        clearInterval(animationInterval);
-        animationInterval = null;
-        return;
-    }
-
-    // Schedule the next step
-    if (!isPaused) {
-        animationInterval = setTimeout(animateStep, currentAnimationDelay);
-    } else {
-        // If paused, store the remaining steps
-        remainingAnimationSteps = exploredNodes.slice(currentAnimationStep).concat(pathNodes.slice(currentAnimationStep - exploredNodes.length));
-    }
-}
-
-function togglePause() {
-    const pauseButton = document.getElementById('pause-btn');
-    isPaused = !isPaused;
-
-    if (isPaused) {
-        pauseButton.textContent = 'Resume';
-        if (animationInterval) {
+         let isPaused = false;
+         let remainingAnimationSteps = [];
+         let currentAnimationDelay = 500;
+         
+         function startAnimation(explored, path, algorithm) {
+         exploredNodes = explored;
+         pathNodes = path;
+         
+         // Generate algorithm steps
+         generateAlgorithmSteps(algorithm, explored, path);
+         
+         const speed = document.getElementById('speed').value;
+         currentAnimationDelay = 1000 - speed; // Invert so higher value = faster
+         
+         currentAnimationStep = 0;
+         
+         // Clear any existing interval
+         if (animationInterval) {
+         clearInterval(animationInterval);
+         animationInterval = null;
+         }
+         
+         // Start the animation
+         animateStep();
+         }
+         
+         function animateStep() {
+         if (currentAnimationStep < exploredNodes.length) {
+         // Exploration phase
+         const nodeId = exploredNodes[currentAnimationStep];
+         highlightNode(nodeId, 'visited');
+         updateAlgorithmStep(currentAnimationStep);
+         currentAnimationStep++;
+         } else if (currentAnimationStep < exploredNodes.length + pathNodes.length) {
+         // Path tracing phase
+         const pathIndex = currentAnimationStep - exploredNodes.length;
+         const nodeId = pathNodes[pathIndex];
+         highlightNode(nodeId, 'in-path');
+         positionRobotAtNode(nodeId);
+         updateAlgorithmStep(currentAnimationStep);
+         currentAnimationStep++;
+         } else {
+         // Animation complete
+         clearInterval(animationInterval);
+         animationInterval = null;
+         return;
+         }
+         
+         // Schedule the next step
+         if (!isPaused) {
+         animationInterval = setTimeout(animateStep, currentAnimationDelay);
+         } else {
+         // If paused, store the remaining steps
+         remainingAnimationSteps = exploredNodes.slice(currentAnimationStep).concat(pathNodes.slice(currentAnimationStep - exploredNodes.length));
+         }
+         }
+         
+         function togglePause() {
+         const pauseButton = document.getElementById('pause-btn');
+         isPaused = !isPaused;
+         
+         if (isPaused) {
+         pauseButton.textContent = 'Resume';
+         if (animationInterval) {
             clearTimeout(animationInterval);
             animationInterval = null;
-        }
-    } else {
-        pauseButton.textContent = 'Pause';
-        if (remainingAnimationSteps.length > 0) {
+         }
+         } else {
+         pauseButton.textContent = 'Pause';
+         if (remainingAnimationSteps.length > 0) {
             exploredNodes = remainingAnimationSteps.slice(0, exploredNodes.length - currentAnimationStep);
             pathNodes = remainingAnimationSteps.slice(exploredNodes.length - currentAnimationStep);
             currentAnimationStep = 0;
             remainingAnimationSteps = [];
-        }
-        animateStep();
-    }
-}
-
-// Update the resetMaze function to reset pause state
-function resetMaze() {
-    if (animationInterval) {
-        clearInterval(animationInterval);
-        animationInterval = null;
-    }
-
-    currentAnimationStep = 0;
-    exploredNodes = [];
-    pathNodes = [];
-    algorithmSteps = [];
-    dataStructureSteps = [];
-    isPaused = false;
-    remainingAnimationSteps = [];
-
-    // Reset cell styles
-    const cells = document.querySelectorAll('.cell');
-    cells.forEach(cell => {
-        cell.classList.remove('visited', 'in-path');
-    });
-
-    // Reset robot position
-    positionRobotAtNode('A');
-
-    // Clear steps
-    document.getElementById('steps-container').innerHTML = '';
-    document.getElementById('data-structure-container').innerHTML = '';
-
-    // Reset pause button text
-    document.getElementById('pause-btn').textContent = 'Pause';
-}
+         }
+         animateStep();
+         }
+         }
+         
+         // Update the resetMaze function to reset pause state
+         function resetMaze() {
+         if (animationInterval) {
+         clearInterval(animationInterval);
+         animationInterval = null;
+         }
+         
+         currentAnimationStep = 0;
+         exploredNodes = [];
+         pathNodes = [];
+         algorithmSteps = [];
+         dataStructureSteps = [];
+         isPaused = false;
+         remainingAnimationSteps = [];
+         
+         // Reset cell styles
+         const cells = document.querySelectorAll('.cell');
+         cells.forEach(cell => {
+         cell.classList.remove('visited', 'in-path');
+         });
+         
+         // Reset robot position
+         positionRobotAtNode('A');
+         
+         // Clear steps
+         document.getElementById('steps-container').innerHTML = '';
+         document.getElementById('data-structure-container').innerHTML = '';
+         
+         // Reset pause button text
+         document.getElementById('pause-btn').textContent = 'Pause';
+         }
          // Initialize maze
          createMaze();
       </script>
