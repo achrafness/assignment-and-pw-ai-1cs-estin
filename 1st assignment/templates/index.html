@@ -1,517 +1,882 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maze Pathfinding Visualization</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-    <div class="container">
-        <div class="section">
-            <h1>Maze Pathfinding Visualization</h1> 
-            
-            <div class="tab-container">
-                <div class="tab active" onclick="openTab('maze-tab')">Maze Visualization</div>
-                <div class="tab" onclick="openTab('steps-tab')">Algorithm Steps</div>
-            </div>
-            
+   <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Maze Pathfinding Visualization</title>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+      <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+   </head>
+   <body>
+      <div class="container">
+         <div class="section">
+            <h1>Maze Pathfinding Visualization</h1>
             <div id="maze-tab" class="tab-content active">
-                <div class="controls">
-                    <select id="algorithm">
-                        <option value="bfs">Breadth-First Search</option>
-                        <option value="dfs">Depth-First Search</option>
-                        <option value="astar">A* Search</option>
-                    </select>
-                    <button id="solve-btn" onclick="solveMaze()">Solve Maze</button>
-                    <button id="reset-btn" onclick="resetMaze()">Reset</button>
-                    <div class="speed-control">
-                        <label for="speed">Speed:</label>
-                        <input type="range" id="speed" min="10" max="1000" value="500" step="10">
-                    </div>
-                </div>
-                
-                <div class="legend">
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #a5d6a7;"></div>
-                        <span>Start (A)</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #ef9a9a;"></div>
-                        <span>Goal (B)</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #fff9c4;"></div>
-                        <span>Visited</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #bbdefb;"></div>
-                        <span>Path</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #555;"></div>
-                        <span>Wall</span>
-                    </div>
-                </div>
-                
-                <div id="maze-container">
-                    <!-- Robot element will be created inside the maze-container -->
-                </div>
+               <div class="controls">
+                  <select id="algorithm">
+                     <option value="bfs">Breadth-First Search</option>
+                     <option value="dfs">Depth-First Search</option>
+                     <option value="astar">A* Search</option>
+                  </select>
+                  <button id="solve-btn" onclick="solveMaze()">Solve Maze</button>
+                  <button id="reset-btn" onclick="resetMaze()">Reset</button>
+                  <div class="speed-control">
+                     <label for="speed">Speed:</label>
+                     <input type="range" id="speed" min="10" max="1000" value="500" step="10">
+                  </div>
+                  <button id="pause-btn" onclick="togglePause()">Pause</button>
+               </div>
+               <div class="legend">
+                  <div class="legend-item">
+                     <div class="legend-color" style="background-color: #a5d6a7;"></div>
+                     <span>Start (A)</span>
+                  </div>
+                  <div class="legend-item">
+                     <div class="legend-color" style="background-color: #ef9a9a;"></div>
+                     <span>Goal (B)</span>
+                  </div>
+                  <div class="legend-item">
+                     <div class="legend-color" style="background-color: #fff9c4;"></div>
+                     <span>Visited</span>
+                  </div>
+                  <div class="legend-item">
+                     <div class="legend-color" style="background-color: #bbdefb;"></div>
+                     <span>Path</span>
+                  </div>
+                  <div class="legend-item">
+                     <div class="legend-color" style="background-color: #555;"></div>
+                     <span>Wall</span>
+                  </div>
+               </div>
+               <div id="maze-container">
+                  <!-- Robot element will be created inside the maze-container -->
+               </div>
             </div>
-            
             <div id="steps-tab" class="tab-content">
-                <h2>Algorithm Execution Steps</h2>
-                <div class="data-structure">
-                    <h3 id="ds-title">Data Structure</h3>
-                    <div id="data-structure-container"></div>
-                </div>
-                <div class="algorithm-steps">
-                    <div id="steps-container"></div>
-                </div>
+               <h2>Algorithm Execution Steps</h2>
+               <div class="data-structure">
+                  <h3 id="ds-title">Data Structure</h3>
+                  <div id="data-structure-container"></div>
+               </div>
+               <div class="algorithm-steps">
+                  <div id="steps-container"></div>
+               </div>
             </div>
-        </div>
-    </div>
+         </div>
+      </div>
+      <script>
+         // Initialize variables
+         let mazeGraph = {{ maze_structure|safe }};
+         let nodePositions = {{ node_positions|safe }};
+         let heuristic = {{ heuristic|safe }};
+         
+         // Maze grid representation for visualization
+         const mazeGrid = {{ maze_grid|safe }};
+         
+         // Node mapping to coordinates for visualization
+         const nodeCellMap = {};
+         const cellNodeMap = {};
+         
+         // Global variables for animation
+         let animationInterval = null;
+         let currentAnimationStep = 0;
+         let exploredNodes = [];
+         let pathNodes = [];
+         let algorithmSteps = [];
+         let dataStructureSteps = [];
+         let robotElement = null;
+         
+         // Create the maze on page load
+         document.addEventListener('DOMContentLoaded', function() {
+             createMaze();
+         });
+         
+         function createMaze() {
+             const mazeContainer = document.getElementById('maze-container');
+             mazeContainer.innerHTML = '';
+             
+             // Create robot element
+             robotElement = document.createElement('div');
+             robotElement.id = 'robot';
+             robotElement.className = 'robot';
+             robotElement.innerHTML = '<i class="fas fa-robot"></i>';
+             mazeContainer.appendChild(robotElement);
+             
+             for (let row = 0; row < mazeGrid.length; row++) {
+                 for (let col = 0; col < mazeGrid[row].length; col++) {
+                     const cell = document.createElement('div');
+                     const value = mazeGrid[row][col];
+                     
+                     if (value === 99) {
+                         cell.className = 'cell wall';
+                     } else if (value === 0) {
+                         cell.className = 'cell path';
+                     } else {
+                         cell.className = 'cell node';
+                         if (value === 'A') {
+                             cell.classList.add('start');
+                         } else if (value === 'B') {
+                             cell.classList.add('goal');
+                         }
+                         
+                         // Add node label
+                         const label = document.createElement('div');
+                         label.className = 'node-label';
+                         label.textContent = value;
+                         cell.appendChild(label);
+                         
+                         // Map node to cell coordinates
+                         nodeCellMap[value] = {row, col};
+                         cellNodeMap[`${row},${col}`] = value;
+                     }
+                     
+                     mazeContainer.appendChild(cell);
+                 }
+             }
+             
+             // Position the robot at start
+             positionRobotAtNode('A');
+         }
+         
+         function getCellCenter(row, col) {
+             const cellSize = 50; // Must match CSS
+             const gridGap = 2; // Must match CSS
+             
+             // Calculate the center of the cell (not the top-left corner)
+             const x = col * (cellSize + gridGap) + cellSize / 2;
+             const y = row * (cellSize + gridGap) + cellSize / 2;
+             
+             return {x, y};
+         }
+         
+         function positionRobotAtNode(nodeId) {
+             if (!nodeCellMap[nodeId] || !robotElement) return;
+             
+             const {row, col} = nodeCellMap[nodeId];
+             
+             // Get the actual cell element from the DOM
+             const mazeContainer = document.getElementById('maze-container');
+             const cells = mazeContainer.querySelectorAll('.cell');
+             const gridWidth = mazeGrid[0].length;
+             const index = row * gridWidth + col;
+             const targetCell = cells[index];
+             
+             if (!targetCell) return;
+             
+             // Get the cell's position relative to the viewport
+             const cellRect = targetCell.getBoundingClientRect();
+             // Get the container's position relative to the viewport
+             const containerRect = mazeContainer.getBoundingClientRect();
+             
+             // Calculate the cell's center position relative to the container
+             const x = cellRect.left - containerRect.left + cellRect.width / 2;
+             const y = cellRect.top - containerRect.top + cellRect.height / 2;
+             
+             // Position the robot at the center of the cell
+             robotElement.style.left = `${x}px`;
+             robotElement.style.top = `${y}px`;
+         }
+         
+         async function solveMaze() {
+             resetMaze();
+             
+             const algorithm = document.getElementById('algorithm').value;
+             const solveButton = document.getElementById('solve-btn');
+             solveButton.disabled = true;
+             
+             // Enhance UI for A* visualization
+             if (algorithm === 'astar') {
+                 const dataStructureContainer = document.getElementById('data-structure-container');
+                 dataStructureContainer.style.minHeight = '400px'; // Give more space for tree
+             }
+             
+             fetch('/solve', {
+                 method: 'POST',
+                 headers: {
+                     'Content-Type': 'application/json',
+                 },
+                 body: JSON.stringify({
+                     algorithm: algorithm,
+                     start: 'A',
+                     goal: 'B'
+                 }),
+             })
+             .then(response => {
+                 if (!response.ok) {
+                     throw new Error('Network response was not ok');
+                 }
+                 return response.json();
+             })
+             .then(result => {
+                 startAnimation(result.explored, result.path, algorithm);
+             })
+             .catch(error => {
+                 console.error('Error:', error);
+                 alert('Error solving maze: ' + error.message);
+             })
+             .finally(() => {
+                 solveButton.disabled = false;
+             });
+         }
+         
+         function resetMaze() {
+             if (animationInterval) {
+                 clearInterval(animationInterval);
+                 animationInterval = null;
+             }
+             
+             currentAnimationStep = 0;
+             exploredNodes = [];
+             pathNodes = [];
+             algorithmSteps = [];
+             dataStructureSteps = [];
+             
+             // Reset cell styles
+             const cells = document.querySelectorAll('.cell');
+             cells.forEach(cell => {
+                 cell.classList.remove('visited', 'in-path');
+             });
+             
+             // Reset robot position
+             positionRobotAtNode('A');
+             
+             // Clear steps
+             document.getElementById('steps-container').innerHTML = '';
+             document.getElementById('data-structure-container').innerHTML = '';
+         }
+         
+         function startAnimation(explored, path, algorithm) {
+             exploredNodes = explored;
+             pathNodes = path;
+             
+             // Generate algorithm steps
+             generateAlgorithmSteps(algorithm, explored, path);
+             
+             const speed = document.getElementById('speed').value;
+             const animationDelay = 1000 - speed; // Invert so higher value = faster
+             
+             currentAnimationStep = 0;
+             
+             animationInterval = setInterval(() => {
+                 if (currentAnimationStep < exploredNodes.length) {
+                     // Exploration phase
+                     const nodeId = exploredNodes[currentAnimationStep];
+                     highlightNode(nodeId, 'visited');
+                     updateAlgorithmStep(currentAnimationStep);
+                     currentAnimationStep++;
+                 } else if (currentAnimationStep < exploredNodes.length + pathNodes.length) {
+                     // Path tracing phase
+                     const pathIndex = currentAnimationStep - exploredNodes.length;
+                     const nodeId = pathNodes[pathIndex];
+                     highlightNode(nodeId, 'in-path');
+                     positionRobotAtNode(nodeId);
+                     updateAlgorithmStep(currentAnimationStep);
+                     currentAnimationStep++;
+                 } else {
+                     // Animation complete
+                     clearInterval(animationInterval);
+                     animationInterval = null;
+                 }
+             }, animationDelay);
+         }
+         
+         function highlightNode(nodeId, className) {
+             if (!nodeCellMap[nodeId]) return;
+             
+             const {row, col} = nodeCellMap[nodeId];
+             const cells = document.querySelectorAll('.cell');
+             const index = row * mazeGrid[0].length + col;
+             
+             if (cells[index]) {
+                 cells[index].classList.add(className);
+             }
+         }
+         
+         function generateAlgorithmSteps(algorithm, explored, path) {
+             algorithmSteps = [];
+             dataStructureSteps = [];
+             
+             const dsTitle = document.getElementById('ds-title');
+             
+             if (algorithm === 'bfs') {
+                 dsTitle.textContent = 'Queue (FIFO)';
+                 
+                 // Initialize queue with start node
+                 let queue = ['A'];
+                 dataStructureSteps.push([...queue]);
+                 algorithmSteps.push("Step 0: Initialize queue with start node A");
+                 
+                 let visited = new Set(['A']);
+                 let stepCount = 1;
+                 
+                 for (let i = 0; i < explored.length; i++) {
+                     const node = explored[i];
+                     
+                     if (i > 0) { // Skip first node as it's already processed in initialization
+                         algorithmSteps.push(`Step ${stepCount}: Dequeue node ${node}`);
+                         // Remove first element from queue (FIFO)
+                         queue.shift();
+                         dataStructureSteps.push([...queue]);
+                         stepCount++;
+                     }
+                     
+                     // Get actual neighbors from the maze graph
+                     const neighbors = Object.keys(mazeGraph[node] || {})
+                         .filter(neighbor => !visited.has(neighbor));
+                     
+                     if (neighbors.length > 0) {
+                         algorithmSteps.push(`Step ${stepCount}: Add neighbors of ${node} to queue: ${neighbors.join(', ')}`);
+                         for (const neighbor of neighbors) {
+                             visited.add(neighbor);
+                             queue.push(neighbor);
+                         }
+                         dataStructureSteps.push([...queue]);
+                         stepCount++;
+                     }
+                     
+                     // Check if we've reached the goal
+                     if (node === 'B') {
+                         algorithmSteps.push(`Step ${stepCount}: Goal reached at node B!`);
+                         break;
+                     }
+                 }
+             } else if (algorithm === 'dfs') {
+                 dsTitle.textContent = 'Stack (LIFO)';
+                 
+                 // Initialize stack with start node
+                 let stack = ['A'];
+                 dataStructureSteps.push([...stack]);
+                 algorithmSteps.push("Step 0: Initialize stack with start node A");
+                 
+                 let visited = new Set(['A']);
+                 let stepCount = 1;
+                 
+                 for (let i = 0; i < explored.length; i++) {
+                     const node = explored[i];
+                     
+                     if (i > 0) { // Skip first node as it's already processed in initialization
+                         algorithmSteps.push(`Step ${stepCount}: Pop node ${node} from stack`);
+                         // Remove last element from stack (LIFO)
+                         stack.pop();
+                         dataStructureSteps.push([...stack]);
+                         stepCount++;
+                     }
+                     
+                     // Get actual neighbors from the maze graph
+                     const neighbors = Object.keys(mazeGraph[node] || {})
+                         .filter(neighbor => !visited.has(neighbor))
+                         .reverse(); // Reverse to ensure correct DFS order
+                     
+                     if (neighbors.length > 0) {
+                         algorithmSteps.push(`Step ${stepCount}: Add neighbors of ${node} to stack: ${neighbors.join(', ')}`);
+                         for (const neighbor of neighbors) {
+                             visited.add(neighbor);
+                             stack.push(neighbor);
+                         }
+                         dataStructureSteps.push([...stack]);
+                         stepCount++;
+                     }
+                     
+                     // Check if we've reached the goal
+                     if (node === 'B') {
+                         algorithmSteps.push(`Step ${stepCount}: Goal reached at node B!`);
+                         break;
+                     }
+                 }
+             }// Replace the A* section in the generateAlgorithmSteps function with this code:
+         
+             else if (algorithm === 'astar') {
+                 dsTitle.textContent = 'A* Search Tree';
+                 
+                 // For A*, we'll track the search tree with format: [nodeId, parentId, g, h, f]
+                 // Initialize with start node
+                 let searchTree = [['A', null, 0, heuristic['A'], heuristic['A']]];
+                 let currentNodes = [['A', 0, heuristic['A'], heuristic['A']]]; // Current frontier nodes
+                 
+                 // Track the current active node for animation
+                 let currentActiveNode = 'A';
+                 let visitedNodes = new Set(['A']);
+                 let pathNodes = new Set();
+                 
+                 dataStructureSteps.push({
+                     tree: JSON.parse(JSON.stringify(searchTree)),
+                     active: currentActiveNode,
+                     visited: Array.from(visitedNodes),
+                     path: Array.from(pathNodes)
+                 });
+                 
+                 algorithmSteps.push(`Step 0: Initialize search tree with A (g=0, h=${heuristic['A']}, f=${heuristic['A']})`);
+                 
+                 let gScores = { 'A': 0 };
+                 let cameFrom = {};
+                 let stepCount = 1;
+                 
+                 for (let i = 0; i < explored.length; i++) {
+                     const node = explored[i];
+                     const currentG = gScores[node] || 0;
+                     
+                     // Add node to visited
+                     visitedNodes.add(node);
+                     
+                     if (i > 0) { 
+                         currentNodes.sort((a, b) => a[3] - b[3]); 
+                         const currentNodeIndex = currentNodes.findIndex(n => n[0] === node);
+                         if (currentNodeIndex !== -1) {
+                             const currentNode = currentNodes[currentNodeIndex];
+                             algorithmSteps.push(`Step ${stepCount}: Expand node ${node} with lowest f-value (f=${currentNode[3]})`);
+                             
+                             // Set as active node
+                             currentActiveNode = node;
+                             
+                             // Remove from current nodes
+                             currentNodes.splice(currentNodeIndex, 1);
+                             stepCount++;
+                         }
+                     }
+                     
+                     // Check if we've reached the goal
+                     if (node === 'B') {
+                         algorithmSteps.push(`Step ${stepCount}: Goal reached at node B!`);
+                         
+                         // Reconstruct path for visualization
+                         let current = 'B';
+                         while (current) {
+                             pathNodes.add(current);
+                             current = cameFrom[current];
+                         }
+                         
+                         dataStructureSteps.push({
+                             tree: JSON.parse(JSON.stringify(searchTree)),
+                             active: currentActiveNode,
+                             visited: Array.from(visitedNodes),
+                             path: Array.from(pathNodes)
+                         });
+                         
+                         break;
+                     }
+                     
+                     // Get neighbors
+                     const neighbors = Object.keys(mazeGraph[node] || {});
+                     const unvisitedNeighbors = neighbors.filter(n => !visitedNodes.has(n));
+                     
+                     if (unvisitedNeighbors.length > 0) {
+                         algorithmSteps.push(`Step ${stepCount}: Evaluate neighbors of ${node}: ${unvisitedNeighbors.join(', ')}`);
+                         
+                         for (const neighbor of unvisitedNeighbors) {
+                             const edgeCost = mazeGraph[node][neighbor] || 1;
+                             const newG = currentG + edgeCost;
+                             const h = heuristic[neighbor] || 0;
+                             const f = newG + h;
+                             
+                             // Check if this is a better path
+                             if (!gScores.hasOwnProperty(neighbor) || newG < gScores[neighbor]) {
+                                 // Update path information
+                                 gScores[neighbor] = newG;
+                                 cameFrom[neighbor] = node;
+                                 
+                                 algorithmSteps.push(`    Calculate for ${neighbor}: g=${newG}, h=${h}, f=${f}`);
+                                 
+                                 // Add to search tree
+                                 searchTree.push([neighbor, node, newG, h, f]);
+                                 
+                                 // Add to current nodes
+                                 const existingNodeIndex = currentNodes.findIndex(n => n[0] === neighbor);
+                                 if (existingNodeIndex !== -1) {
+                                     currentNodes[existingNodeIndex] = [neighbor, newG, h, f];
+                                 } else {
+                                     currentNodes.push([neighbor, newG, h, f]);
+                                 }
+                             }
+                         }
+                         
+                         dataStructureSteps.push({
+                             tree: JSON.parse(JSON.stringify(searchTree)),
+                             active: currentActiveNode,
+                             visited: Array.from(visitedNodes),
+                             path: Array.from(pathNodes)
+                         });
+                         
+                         stepCount++;
+                     }
+                 }
+             }
+             
+             // Add final path information
+             algorithmSteps.push(`\nFinal path found: ${path.join(' → ')}`);
+             algorithmSteps.push(`Path length: ${path.length} nodes`);
+             algorithmSteps.push(`Total nodes explored: ${explored.length} nodes`);
+         }
+         
+         function formatPriorityQueue(queue) {
+             if (queue.length === 0) return [];
+             
+             return queue.map(item => {
+                 const [node, g, h, f] = item;
+                 return `${node}(f=${f})`;
+             });
+         }
+         
+         function formatSearchTree(tree) {
+             if (tree.length === 0) return [];
+             
+             // Create a lookup table for quick access to nodes
+             const nodeMap = new Map();
+             tree.forEach(nodeInfo => {
+                 const [nodeId, parentId, g, h, f] = nodeInfo;
+                 nodeMap.set(nodeId, {
+                     id: nodeId,
+                     parentId: parentId,
+                     g: g,
+                     h: h,
+                     f: f,
+                     children: []
+                 });
+             });
+             
+             // Build the tree structure
+             let root = null;
+             nodeMap.forEach(node => {
+                 if (node.parentId === null) {
+                     root = node;
+                 } else {
+                     const parent = nodeMap.get(node.parentId);
+                     if (parent) {
+                         parent.children.push(node);
+                     }
+                 }
+             });
+             
+             // Generate HTML representation of the tree
+             if (!root) return ['Tree is empty'];
+             
+             const treeHTML = [];
+             
+             function generateTreeHTML(node, depth = 0, isLast = false) {
+                 const indent = '│  '.repeat(depth);
+                 const connector = isLast ? '└─ ' : '├─ ';
+                 
+                 if (depth === 0) {
+                     treeHTML.push(`${node.id} (g=${node.g}, h=${node.h}, f=${node.f})`);
+                 } else {
+                     treeHTML.push(`${indent}${connector}${node.id} (g=${node.g}, h=${node.h}, f=${node.f})`);
+                 }
+                 
+                 const children = node.children;
+                 children.forEach((child, index) => {
+                     generateTreeHTML(child, depth + 1, index === children.length - 1);
+                 });
+             }
+             
+             generateTreeHTML(root);
+             return treeHTML;
+         }
+         
+         function updateAlgorithmStep(step) {
+         const stepsContainer = document.getElementById('steps-container');
+         const dataStructureContainer = document.getElementById('data-structure-container');
+         
+         // Update algorithm steps
+         if (step < algorithmSteps.length) {
+         stepsContainer.innerHTML = algorithmSteps.slice(0, step + 1).join('\n');
+         stepsContainer.scrollTop = stepsContainer.scrollHeight;
+         }
+         
+         // Update data structure visualization
+         if (step < dataStructureSteps.length) {
+         dataStructureContainer.innerHTML = '';
+         const data = dataStructureSteps[step];
+         
+         const algorithm = document.getElementById('algorithm').value;
+         
+         if (algorithm === 'astar' && data.tree) {
+             // Create a visual tree for A*
+             renderAStarTree(data, dataStructureContainer);
+         } else if (data && data.length > 0) {
+             // For BFS/DFS queue/stack visualization
+             data.forEach((item, index) => {
+                 const itemEl = document.createElement('div');
+                 itemEl.className = 'data-item';
+                 if (index === 0 && data.length > 1) {
+                     itemEl.classList.add('current-item'); // Highlight the active item
+                 }
+                 itemEl.textContent = item;
+                 dataStructureContainer.appendChild(itemEl);
+             });
+         } else {
+             dataStructureContainer.textContent = '(empty)';
+         }
+         }
+         }
+         
+         // Add this new function to render the A* tree
+         function renderAStarTree(data, container) {
+         const { tree, active, visited, path } = data;
+         
+         // Create node map
+         const nodeMap = new Map();
+         tree.forEach(nodeData => {
+         const [nodeId, parentId, g, h, f] = nodeData;
+         nodeMap.set(nodeId, {
+             id: nodeId,
+             parentId: parentId,
+             g: g,
+             h: h,
+             f: f,
+             children: []
+         });
+         });
+         
+         // Build tree structure
+         let root = null;
+         nodeMap.forEach(node => {
+         if (node.parentId === null) {
+             root = node;
+         } else {
+             const parent = nodeMap.get(node.parentId);
+             if (parent) {
+                 parent.children.push(node);
+             }
+         }
+         });
+         
+         // Create tree DOM
+         if (!root) {
+         container.textContent = 'No tree data available';
+         return;
+         }
+         
+         const treeElement = document.createElement('div');
+         treeElement.className = 'tree';
+         
+         // Recursively build tree
+         function buildTreeNode(node, isRoot = false) {
+         const nodeElement = document.createElement('div');
+         nodeElement.className = 'node';
+         if (isRoot) {
+             nodeElement.classList.add('node--root');
+         }
+         
+         // Create node element
+         const nodeElementDiv = document.createElement('div');
+         nodeElementDiv.className = 'node__element';
+         
+         // Add status classes
+         if (node.id === active) {
+             nodeElementDiv.classList.add('current');
+         } else if (path.includes(node.id)) {
+             nodeElementDiv.classList.add('in-path');
+         } else if (visited.includes(node.id)) {
+             nodeElementDiv.classList.add('visited');
+         }
+         
+         // Add node content
+         const nodeIdDiv = document.createElement('div');
+         nodeIdDiv.className = 'node-id';
+         nodeIdDiv.textContent = node.id;
+         
+         const nodeValuesDiv = document.createElement('div');
+         nodeValuesDiv.className = 'node-values';
+         nodeValuesDiv.textContent = `g=${node.g}, h=${node.h}, f=${node.f}`;
+         
+         nodeElementDiv.appendChild(nodeIdDiv);
+         nodeElementDiv.appendChild(nodeValuesDiv);
+         
+         nodeElement.appendChild(nodeElementDiv);
+         
+         // Add children if any
+         if (node.children && node.children.length > 0) {
+             const bottomLine = document.createElement('div');
+             bottomLine.className = 'node__bottom-line';
+             nodeElement.appendChild(bottomLine);
+             
+             const childrenDiv = document.createElement('div');
+             childrenDiv.className = 'node__children';
+             
+             // Sort children by f-value (A* priority)
+             node.children.sort((a, b) => a.f - b.f);
+             
+             node.children.forEach(child => {
+                 childrenDiv.appendChild(buildTreeNode(child));
+             });
+             
+             nodeElement.appendChild(childrenDiv);
+         }
+         
+         return nodeElement;
+         }
+         
+         treeElement.appendChild(buildTreeNode(root, true));
+         container.appendChild(treeElement);
+         
+         // Add title for the tree
+         const treeTitle = document.createElement('h3');
+         treeTitle.textContent = 'A* Search Tree';
+         treeTitle.style.marginBottom = '10px';
+         treeTitle.style.textAlign = 'center';
+         container.insertBefore(treeTitle, treeElement);
+         
+         // Add a simple legend
+         const legend = document.createElement('div');
+         legend.className = 'tree-legend';
+         legend.style.display = 'flex';
+         legend.style.justifyContent = 'center';
+         legend.style.gap = '12px';
+         legend.style.marginBottom = '10px';
+         legend.style.fontSize = '12px';
+         
+         const legendItems = [
+         { label: 'Unexplored', class: '' },
+         { label: 'Current', class: 'current' },
+         { label: 'Visited', class: 'visited' },
+         { label: 'Path', class: 'in-path' }
+         ];
+         
+         legendItems.forEach(item => {
+         const legendItem = document.createElement('div');
+         legendItem.style.display = 'flex';
+         legendItem.style.alignItems = 'center';
+         legendItem.style.gap = '4px';
+         
+         const legendColor = document.createElement('div');
+         legendColor.style.width = '12px';
+         legendColor.style.height = '12px';
+         legendColor.style.borderRadius = '2px';
+         
+         if (item.class === '') {
+             legendColor.style.backgroundColor = 'var(--primary-light)';
+         } else {
+             const tempEl = document.createElement('div');
+             tempEl.className = `node__element ${item.class}`;
+             document.body.appendChild(tempEl);
+             const computedStyle = getComputedStyle(tempEl);
+             legendColor.style.backgroundColor = computedStyle.backgroundColor;
+             document.body.removeChild(tempEl);
+         }
+         
+         const legendText = document.createElement('span');
+         legendText.textContent = item.label;
+         
+         legendItem.appendChild(legendColor);
+         legendItem.appendChild(legendText);
+         legend.appendChild(legendItem);
+         });
+         
+         container.insertBefore(legend, treeElement);
+         }
+         
+         // Add global variables for pause functionality
+let isPaused = false;
+let remainingAnimationSteps = [];
+let currentAnimationDelay = 500;
 
-    <script>
-        // Initialize variables
-        let mazeGraph = {{ maze_structure|safe }};
-        let nodePositions = {{ node_positions|safe }};
-        let heuristic = {{ heuristic|safe }};
-        
-        // Maze grid representation for visualization
-        const mazeGrid = {{ maze_grid|safe }};
+function startAnimation(explored, path, algorithm) {
+    exploredNodes = explored;
+    pathNodes = path;
 
-        // Node mapping to coordinates for visualization
-        const nodeCellMap = {};
-        const cellNodeMap = {};
+    // Generate algorithm steps
+    generateAlgorithmSteps(algorithm, explored, path);
 
-        // Global variables for animation
-        let animationInterval = null;
-        let currentAnimationStep = 0;
-        let exploredNodes = [];
-        let pathNodes = [];
-        let algorithmSteps = [];
-        let dataStructureSteps = [];
-        let robotElement = null;
+    const speed = document.getElementById('speed').value;
+    currentAnimationDelay = 1000 - speed; // Invert so higher value = faster
 
-        // Create the maze on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            createMaze();
-        });
+    currentAnimationStep = 0;
 
-        function createMaze() {
-            const mazeContainer = document.getElementById('maze-container');
-            mazeContainer.innerHTML = '';
-            
-            // Create robot element
-            robotElement = document.createElement('div');
-            robotElement.id = 'robot';
-            robotElement.className = 'robot';
-            robotElement.innerHTML = '<i class="fas fa-robot"></i>';
-            mazeContainer.appendChild(robotElement);
-            
-            for (let row = 0; row < mazeGrid.length; row++) {
-                for (let col = 0; col < mazeGrid[row].length; col++) {
-                    const cell = document.createElement('div');
-                    const value = mazeGrid[row][col];
-                    
-                    if (value === 99) {
-                        cell.className = 'cell wall';
-                    } else if (value === 0) {
-                        cell.className = 'cell path';
-                    } else {
-                        cell.className = 'cell node';
-                        if (value === 'A') {
-                            cell.classList.add('start');
-                        } else if (value === 'B') {
-                            cell.classList.add('goal');
-                        }
-                        
-                        // Add node label
-                        const label = document.createElement('div');
-                        label.className = 'node-label';
-                        label.textContent = value;
-                        cell.appendChild(label);
-                        
-                        // Map node to cell coordinates
-                        nodeCellMap[value] = {row, col};
-                        cellNodeMap[`${row},${col}`] = value;
-                    }
-                    
-                    mazeContainer.appendChild(cell);
-                }
-            }
-            
-            // Position the robot at start
-            positionRobotAtNode('A');
+    // Clear any existing interval
+    if (animationInterval) {
+        clearInterval(animationInterval);
+        animationInterval = null;
+    }
+
+    // Start the animation
+    animateStep();
+}
+
+function animateStep() {
+    if (currentAnimationStep < exploredNodes.length) {
+        // Exploration phase
+        const nodeId = exploredNodes[currentAnimationStep];
+        highlightNode(nodeId, 'visited');
+        updateAlgorithmStep(currentAnimationStep);
+        currentAnimationStep++;
+    } else if (currentAnimationStep < exploredNodes.length + pathNodes.length) {
+        // Path tracing phase
+        const pathIndex = currentAnimationStep - exploredNodes.length;
+        const nodeId = pathNodes[pathIndex];
+        highlightNode(nodeId, 'in-path');
+        positionRobotAtNode(nodeId);
+        updateAlgorithmStep(currentAnimationStep);
+        currentAnimationStep++;
+    } else {
+        // Animation complete
+        clearInterval(animationInterval);
+        animationInterval = null;
+        return;
+    }
+
+    // Schedule the next step
+    if (!isPaused) {
+        animationInterval = setTimeout(animateStep, currentAnimationDelay);
+    } else {
+        // If paused, store the remaining steps
+        remainingAnimationSteps = exploredNodes.slice(currentAnimationStep).concat(pathNodes.slice(currentAnimationStep - exploredNodes.length));
+    }
+}
+
+function togglePause() {
+    const pauseButton = document.getElementById('pause-btn');
+    isPaused = !isPaused;
+
+    if (isPaused) {
+        pauseButton.textContent = 'Resume';
+        if (animationInterval) {
+            clearTimeout(animationInterval);
+            animationInterval = null;
         }
-
-        function getCellCenter(row, col) {
-            const cellSize = 50; // Must match CSS
-            const gridGap = 2; // Must match CSS
-            
-            // Calculate the center of the cell (not the top-left corner)
-            const x = col * (cellSize + gridGap) + cellSize / 2;
-            const y = row * (cellSize + gridGap) + cellSize / 2;
-            
-            return {x, y};
-        }
-
-        function positionRobotAtNode(nodeId) {
-            if (!nodeCellMap[nodeId] || !robotElement) return;
-            
-            const {row, col} = nodeCellMap[nodeId];
-            
-            // Get the actual cell element from the DOM
-            const mazeContainer = document.getElementById('maze-container');
-            const cells = mazeContainer.querySelectorAll('.cell');
-            const gridWidth = mazeGrid[0].length;
-            const index = row * gridWidth + col;
-            const targetCell = cells[index];
-            
-            if (!targetCell) return;
-            
-            // Get the cell's position relative to the viewport
-            const cellRect = targetCell.getBoundingClientRect();
-            // Get the container's position relative to the viewport
-            const containerRect = mazeContainer.getBoundingClientRect();
-            
-            // Calculate the cell's center position relative to the container
-            const x = cellRect.left - containerRect.left + cellRect.width / 2;
-            const y = cellRect.top - containerRect.top + cellRect.height / 2;
-            
-            // Position the robot at the center of the cell
-            robotElement.style.left = `${x}px`;
-            robotElement.style.top = `${y}px`;
-        }
-
-        function openTab(tabId) {
-            const tabContents = document.getElementsByClassName('tab-content');
-            for (let i = 0; i < tabContents.length; i++) {
-                tabContents[i].classList.remove('active');
-            }
-            
-            const tabs = document.getElementsByClassName('tab');
-            for (let i = 0; i < tabs.length; i++) {
-                tabs[i].classList.remove('active');
-            }
-            
-            document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
-        }
-
-        async function solveMaze() {
-            resetMaze();
-            
-            const algorithm = document.getElementById('algorithm').value;
-            const solveButton = document.getElementById('solve-btn');
-            solveButton.disabled = true;
-            
-            try {
-                const response = await fetch('/solve', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        algorithm: algorithm,
-                        start: 'A',
-                        goal: 'B'
-                    }),
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                
-                const result = await response.json();
-                startAnimation(result.explored, result.path, algorithm);
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error solving maze: ' + error.message);
-            } finally {
-                solveButton.disabled = false;
-            }
-        }
-
-        function resetMaze() {
-            if (animationInterval) {
-                clearInterval(animationInterval);
-                animationInterval = null;
-            }
-            
+    } else {
+        pauseButton.textContent = 'Pause';
+        if (remainingAnimationSteps.length > 0) {
+            exploredNodes = remainingAnimationSteps.slice(0, exploredNodes.length - currentAnimationStep);
+            pathNodes = remainingAnimationSteps.slice(exploredNodes.length - currentAnimationStep);
             currentAnimationStep = 0;
-            exploredNodes = [];
-            pathNodes = [];
-            algorithmSteps = [];
-            dataStructureSteps = [];
-            
-            // Reset cell styles
-            const cells = document.querySelectorAll('.cell');
-            cells.forEach(cell => {
-                cell.classList.remove('visited', 'in-path');
-            });
-            
-            // Reset robot position
-            positionRobotAtNode('A');
-            
-            // Clear steps
-            document.getElementById('steps-container').innerHTML = '';
-            document.getElementById('data-structure-container').innerHTML = '';
+            remainingAnimationSteps = [];
         }
+        animateStep();
+    }
+}
 
-        function startAnimation(explored, path, algorithm) {
-            exploredNodes = explored;
-            pathNodes = path;
-            
-            // Generate algorithm steps
-            generateAlgorithmSteps(algorithm, explored, path);
-            
-            const speed = document.getElementById('speed').value;
-            const animationDelay = 1000 - speed; // Invert so higher value = faster
-            
-            currentAnimationStep = 0;
-            
-            animationInterval = setInterval(() => {
-                if (currentAnimationStep < exploredNodes.length) {
-                    // Exploration phase
-                    const nodeId = exploredNodes[currentAnimationStep];
-                    highlightNode(nodeId, 'visited');
-                    updateAlgorithmStep(currentAnimationStep);
-                    currentAnimationStep++;
-                } else if (currentAnimationStep < exploredNodes.length + pathNodes.length) {
-                    // Path tracing phase
-                    const pathIndex = currentAnimationStep - exploredNodes.length;
-                    const nodeId = pathNodes[pathIndex];
-                    highlightNode(nodeId, 'in-path');
-                    positionRobotAtNode(nodeId);
-                    updateAlgorithmStep(currentAnimationStep);
-                    currentAnimationStep++;
-                } else {
-                    // Animation complete
-                    clearInterval(animationInterval);
-                    animationInterval = null;
-                }
-            }, animationDelay);
-        }
+// Update the resetMaze function to reset pause state
+function resetMaze() {
+    if (animationInterval) {
+        clearInterval(animationInterval);
+        animationInterval = null;
+    }
 
-        function highlightNode(nodeId, className) {
-            if (!nodeCellMap[nodeId]) return;
-            
-            const {row, col} = nodeCellMap[nodeId];
-            const cells = document.querySelectorAll('.cell');
-            const index = row * mazeGrid[0].length + col;
-            
-            if (cells[index]) {
-                cells[index].classList.add(className);
-            }
-        }
+    currentAnimationStep = 0;
+    exploredNodes = [];
+    pathNodes = [];
+    algorithmSteps = [];
+    dataStructureSteps = [];
+    isPaused = false;
+    remainingAnimationSteps = [];
 
-        function generateAlgorithmSteps(algorithm, explored, path) {
-            algorithmSteps = [];
-            dataStructureSteps = [];
-            
-            const dsTitle = document.getElementById('ds-title');
-            
-            if (algorithm === 'bfs') {
-                dsTitle.textContent = 'Queue (FIFO)';
-                
-                // Initialize queue with start node
-                let queue = ['A'];
-                dataStructureSteps.push([...queue]);
-                algorithmSteps.push("Step 0: Initialize queue with start node A");
-                
-                let visited = new Set(['A']);
-                let stepCount = 1;
-                
-                for (let i = 0; i < explored.length; i++) {
-                    const node = explored[i];
-                    
-                    if (i > 0) { // Skip first node as it's already processed in initialization
-                        algorithmSteps.push(`Step ${stepCount}: Dequeue node ${node}`);
-                        // Remove first element from queue (FIFO)
-                        queue.shift();
-                        dataStructureSteps.push([...queue]);
-                        stepCount++;
-                    }
-                    
-                    // Get actual neighbors from the maze graph
-                    const neighbors = Object.keys(mazeGraph[node] || {})
-                        .filter(neighbor => !visited.has(neighbor));
-                    
-                    if (neighbors.length > 0) {
-                        algorithmSteps.push(`Step ${stepCount}: Add neighbors of ${node} to queue: ${neighbors.join(', ')}`);
-                        for (const neighbor of neighbors) {
-                            visited.add(neighbor);
-                            queue.push(neighbor);
-                        }
-                        dataStructureSteps.push([...queue]);
-                        stepCount++;
-                    }
-                    
-                    // Check if we've reached the goal
-                    if (node === 'B') {
-                        algorithmSteps.push(`Step ${stepCount}: Goal reached at node B!`);
-                        break;
-                    }
-                }
-            } else if (algorithm === 'dfs') {
-                dsTitle.textContent = 'Stack (LIFO)';
-                
-                // Initialize stack with start node
-                let stack = ['A'];
-                dataStructureSteps.push([...stack]);
-                algorithmSteps.push("Step 0: Initialize stack with start node A");
-                
-                let visited = new Set(['A']);
-                let stepCount = 1;
-                
-                for (let i = 0; i < explored.length; i++) {
-                    const node = explored[i];
-                    
-                    if (i > 0) { // Skip first node as it's already processed in initialization
-                        algorithmSteps.push(`Step ${stepCount}: Pop node ${node} from stack`);
-                        // Remove last element from stack (LIFO)
-                        stack.pop();
-                        dataStructureSteps.push([...stack]);
-                        stepCount++;
-                    }
-                    
-                    // Get actual neighbors from the maze graph
-                    const neighbors = Object.keys(mazeGraph[node] || {})
-                        .filter(neighbor => !visited.has(neighbor))
-                        .reverse(); // Reverse to ensure correct DFS order
-                    
-                    if (neighbors.length > 0) {
-                        algorithmSteps.push(`Step ${stepCount}: Add neighbors of ${node} to stack: ${neighbors.join(', ')}`);
-                        for (const neighbor of neighbors) {
-                            visited.add(neighbor);
-                            stack.push(neighbor);
-                        }
-                        dataStructureSteps.push([...stack]);
-                        stepCount++;
-                    }
-                    
-                    // Check if we've reached the goal
-                    if (node === 'B') {
-                        algorithmSteps.push(`Step ${stepCount}: Goal reached at node B!`);
-                        break;
-                    }
-                }
-            } else if (algorithm === 'astar') {
-                dsTitle.textContent = 'Priority Queue (sorted by f = g + h)';
-                
-                // For A*, we simulate the priority queue with format: [node, g, h, f]
-                // Initialize priority queue with start node
-                let priorityQueue = [['A', 0, heuristic['A'], heuristic['A']]];
-                dataStructureSteps.push(formatPriorityQueue(priorityQueue));
-                algorithmSteps.push(`Step 0: Initialize priority queue with A (g=0, h=${heuristic['A']}, f=${heuristic['A']})`);
-                
-                let visited = new Set();
-                let gScores = { 'A': 0 };
-                let stepCount = 1;
-                
-                for (let i = 0; i < explored.length; i++) {
-                    const node = explored[i];
-                    const currentG = gScores[node] || 0;
-                    
-                    // Add node to visited after popping from priority queue
-                    visited.add(node);
-                    
-                    if (i > 0) { // Skip first node as it's already processed in initialization
-                        algorithmSteps.push(`Step ${stepCount}: Remove node ${node} with lowest f-value from priority queue`);
-                        // Remove the first element (already sorted by f-value)
-                        priorityQueue.shift();
-                        dataStructureSteps.push(formatPriorityQueue(priorityQueue));
-                        stepCount++;
-                    }
-                    
-                    // Check if we've reached the goal
-                    if (node === 'B') {
-                        algorithmSteps.push(`Step ${stepCount}: Goal reached at node B!`);
-                        break;
-                    }
-                    
-                    // Get neighbors
-                    const neighbors = Object.keys(mazeGraph[node] || {});
-                    const unvisitedNeighbors = neighbors.filter(n => !visited.has(n));
-                    
-                    if (unvisitedNeighbors.length > 0) {
-                        algorithmSteps.push(`Step ${stepCount}: Evaluate neighbors of ${node}: ${unvisitedNeighbors.join(', ')}`);
-                        
-                        for (const neighbor of unvisitedNeighbors) {
-                            const edgeCost = mazeGraph[node][neighbor] || 1;
-                            const newG = currentG + edgeCost;
-                            const h = heuristic[neighbor] || 0;
-                            const f = newG + h;
-                            
-                            // Check if this is a better path
-                            if (!gScores.hasOwnProperty(neighbor) || newG < gScores[neighbor]) {
-                                gScores[neighbor] = newG;
-                                algorithmSteps.push(`    Calculate for ${neighbor}: g=${newG}, h=${h}, f=${f}`);
-                                
-                                // Add to priority queue and sort by f-value
-                                priorityQueue.push([neighbor, newG, h, f]);
-                                priorityQueue.sort((a, b) => a[3] - b[3]); // Sort by f-value
-                            }
-                        }
-                        
-                        dataStructureSteps.push(formatPriorityQueue(priorityQueue));
-                        stepCount++;
-                    }
-                }
-            }
-            
-            // Add final path information
-            algorithmSteps.push(`\nFinal path found: ${path.join(' → ')}`);
-            algorithmSteps.push(`Path length: ${path.length} nodes`);
-            algorithmSteps.push(`Total nodes explored: ${explored.length} nodes`);
-        }
-        
-        // Helper function to format priority queue for display
-        function formatPriorityQueue(queue) {
-            if (queue.length === 0) return [];
-            
-            return queue.map(item => {
-                const [node, g, h, f] = item;
-                return `${node}(f=${f})`;
-            });
-        }
-        
-        function updateAlgorithmStep(step) {
-            const stepsContainer = document.getElementById('steps-container');
-            const dataStructureContainer = document.getElementById('data-structure-container');
-            
-            // Update algorithm steps
-            if (step < algorithmSteps.length) {
-                stepsContainer.innerHTML = algorithmSteps.slice(0, step + 1).join('\n');
-                stepsContainer.scrollTop = stepsContainer.scrollHeight;
-            }
-            
-            // Update data structure visualization
-            if (step < dataStructureSteps.length) {
-                dataStructureContainer.innerHTML = '';
-                const items = dataStructureSteps[step];
-                
-                if (items && items.length > 0) {
-                    items.forEach((item, index) => {
-                        const itemEl = document.createElement('div');
-                        itemEl.className = 'data-item';
-                        if (index === 0 && items.length > 1) {
-                            itemEl.classList.add('current-item'); // Highlight the active item
-                        }
-                        itemEl.textContent = item;
-                        dataStructureContainer.appendChild(itemEl);
-                    });
-                } else {
-                    dataStructureContainer.textContent = '(empty)';
-                }
-            }
-        }
+    // Reset cell styles
+    const cells = document.querySelectorAll('.cell');
+    cells.forEach(cell => {
+        cell.classList.remove('visited', 'in-path');
+    });
 
-        // Initialize maze
-        createMaze();
-    </script>
-</body>
+    // Reset robot position
+    positionRobotAtNode('A');
+
+    // Clear steps
+    document.getElementById('steps-container').innerHTML = '';
+    document.getElementById('data-structure-container').innerHTML = '';
+
+    // Reset pause button text
+    document.getElementById('pause-btn').textContent = 'Pause';
+}
+         // Initialize maze
+         createMaze();
+      </script>
+   </body>
 </html>

@@ -29,7 +29,7 @@
   .container {
     display: flex;
     flex-direction: column;
-    max-width: 1200px;
+    max-width: 2000px;
     margin: 2rem auto;
     padding: 0 1rem;
   }
@@ -90,32 +90,128 @@
     color: var(--primary);
   }
   
-  .tab.active {
-    background-color: white;
-    border-color: var(--gray-light);
-    color: var(--primary);
-    position: relative;
-  }
-  
-  .tab.active::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background-color: white;
-  }
-  
-  .tab-content {
-    display: none;
-    animation: fadeIn 0.3s ease;
-  }
-  
-  .tab-content.active {
-    display: block;
-  }
-  
+/* tree  */
+.tree {
+  --dark: var(--dark);
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+.tree .node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 20px;
+  position: relative;
+}
+.tree .node:not(.node--root) > .node__element::before {
+  content: '';
+  height: 20px;
+  width: 1px;
+  background-color: var(--gray-light);
+  display: block;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -20px;
+  margin: auto;
+}
+.tree .node.node--left {
+  margin-right: 10px;
+}
+.tree .node.node--right {
+  margin-left: 10px;
+}
+.tree .node__element {
+  cursor: pointer;
+  border: 1px solid transparent;
+  height: auto;
+  background-color: var(--primary-light);
+  border-radius: var(--radius);
+  min-width: 60px;
+  max-width: max-content;
+  padding: 4px 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.tree .node__bottom-line {
+  height: 20px;
+  width: 1px;
+  background-color: var(--gray-light);
+}
+.tree .node__element,
+.tree .node__element::before,
+.tree .node__children,
+.tree .node__bottom-line {
+  transition: all ease 0.2s;
+}
+.tree .node__children {
+  display: flex;
+  padding: 20px 0;
+  border-top: 1px solid var(--gray-light);
+}
+.tree .node__element:hover {
+  border-color: var(--dark);
+}
+.tree .node__element:hover ~ .node__children .node__element::before {
+  width: 2px;
+  background-color: var(--dark);
+}
+.tree .node__element:hover ~ .node__bottom-line,
+.tree .node__element:hover ~ .node__children .node__bottom-line {
+  width: 2px;
+  background-color: var(--dark);
+}
+.tree .node__element:hover ~ .node__children,
+.tree .node__element:hover ~ .node__children .node__children {
+  border-top-width: 2px;
+  border-color: var(--dark);
+}
+
+.tree .node__element {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 40px;
+  padding: 6px 10px;
+}
+
+.tree .node__element.current {
+  background-color: var(--warning);
+  color: var(--light);
+}
+
+.tree .node__element.visited {
+  background-color: var(--success);
+  color: var(--light);
+}
+
+.tree .node__element.in-path {
+  background-color: var(--primary);
+  color: var(--light);
+}
+
+.tree .node__element .node-id {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.tree .node__element .node-values {
+  font-size: 10px;
+}
+
+.tree .node__children {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+/* end the tree  */
+
   @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -173,6 +269,7 @@
     background-color: #fef9c3;
     animation: pulseVisited 1s;
   }
+
   
   .in-path {
     background-color: var(--primary-light);
