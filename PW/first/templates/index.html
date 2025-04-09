@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bejaia Router - Find Your Way</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero is-primary is-bold">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title is-1">
+                    <i class="fas fa-route"></i> Bejaia Router
+                </h1>
+                <h2 class="subtitle">
+                    Find the best route between locations in Bejaia region
+                </h2>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                <!-- Search Panel -->
+                <div class="column is-4">
+                    <div class="box search-panel">
+                        <h3 class="title is-4">Plan Your Journey</h3>
+                        
+                        <div class="field">
+                            <label class="label">Starting Point</label>
+                            <div class="control has-icons-left">
+                                <input id="origin-input" class="input" type="text" placeholder="Bejaia, Algeria" value="Bejaia, Algeria">
+                                <span class="icon is-small is-left">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="field">
+                            <label class="label">Destination</label>
+                            <div class="control has-icons-left">
+                                <input id="destination-input" class="input" type="text" placeholder="e.g., Algiers, Algeria">
+                                <span class="icon is-small is-left">
+                                    <i class="fas fa-flag"></i>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="field">
+                            <div class="control">
+                                <button id="search-btn" class="button is-primary is-fullwidth">
+                                    <span class="icon">
+                                        <i class="fas fa-search"></i>
+                                    </span>
+                                    <span>Find Route</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="loading" class="has-text-centered is-hidden">
+                            <progress class="progress is-small is-primary" max="100">15%</progress>
+                            <p>Calculating the best route...</p>
+                        </div>
+                        
+                        <div id="route-info" class="notification is-info is-light is-hidden">
+                            <h4 class="title is-5">Route Information</h4>
+                            <p id="distance"><strong>Distance:</strong> <span id="distance-value">--</span></p>
+                            <p id="origin-info"><strong>From:</strong> <span id="origin-value">--</span></p>
+                            <p id="destination-info"><strong>To:</strong> <span id="destination-value">--</span></p>
+                        </div>
+                        
+                        <!-- Popular Destinations -->
+                        <div class="mt-5">
+                            <h4 class="title is-5">Popular Destinations</h4>
+                            <div id="popular-destinations" class="tags">
+                                <!-- Populated via JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Map Panel -->
+                <div class="column is-8">
+                    <div class="box map-container">
+                        <div id="map">
+                            <!-- Map will be displayed here -->
+                            <div class="has-text-centered initial-map-message">
+                                <p class="is-size-4"><i class="fas fa-map-marked-alt"></i></p>
+                                <p>Select a destination to see the route</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="content has-text-centered">
+            <p>
+                <strong>Algeria Router</strong> by Algeria Explorer Team. Powered by
+                <a href="https://flask.palletsprojects.com/">Flask</a>,
+                <a href="https://osmnx.readthedocs.io/">OSMnx</a>, and
+                <a href="https://bulma.io/">Bulma</a>.
+            </p>
+            <p>Map data © OpenStreetMap contributors</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
