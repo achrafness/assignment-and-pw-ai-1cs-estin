@@ -684,10 +684,61 @@ class PathfindingApp:
 # =============================================================================
 # Main Entry Point
 # =============================================================================
+# =============================================================================
+# Map Data Download and Initialization
+# =============================================================================
+def download_map_data(place_name: str = "Algiers, Algeria", 
+                     network_type: str = "drive",
+                     filename: str = "algiers_graph.graphml") -> None:
+    """Download and save map data from OpenStreetMap.
+    
+    Args:
+        place_name: Name of the area to download (default: "Algiers, Algeria")
+        network_type: Type of network ("drive", "walk", "bike", etc.)
+        filename: Output filename for the GraphML file
+    """
+    try:
+        logger.info(f"Downloading map data for {place_name}...")
+        
+        # Download the street network
+        graph = ox.graph_from_place(place_name, network_type=network_type)
+        
+        # Simplify the graph (optional but recommended)
+        graph = ox.simplify_graph(graph)
+        
+        # Save to GraphML file
+        ox.save_graphml(graph, filename)
+        logger.info(f"Map data saved to {filename}")
+        
+    except Exception as e:
+        logger.error(f"Error downloading map data: {e}")
+        raise
+
+# =============================================================================
+# Main Entry Point with Map Initialization
+# =============================================================================
 if __name__ == '__main__':
+    # Configuration
+    MAP_DATA_FILE = "algiers_graph.graphml"
+    PLACE_NAME = "Algiers, Algeria"
+    
+    # Check if map data exists, download if not
+    if not os.path.exists(MAP_DATA_FILE):
+        logger.info("Map data not found. Downloading...")
+        download_map_data(place_name=PLACE_NAME, filename=MAP_DATA_FILE)
+    
+    # Calculate map bounds from the downloaded data
+    graph = ox.load_graphml(MAP_DATA_FILE)
+    nodes = ox.graph_to_gdfs(graph, edges=False)
+    min_lat, min_lng = nodes['y'].min(), nodes['x'].min()
+    max_lat, max_lng = nodes['y'].max(), nodes['x'].max()
+    bounds = [[min_lat, min_lng], [max_lat, max_lng]]
+    default_center = [(min_lat + max_lat)/2, (min_lng + max_lng)/2]
+    
+    # Create and run the app
     app = PathfindingApp(
-        graph_file="algiers_graph.graphml",
-        default_center=[36.75, 3.05],
-        bounds=[[36.5968, 2.8249], [36.8736, 3.3014]]
+        graph_file=MAP_DATA_FILE,
+        default_center=default_center,
+        bounds=bounds
     )
     app.run_server(debug=False)
