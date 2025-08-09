@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Generated Timetable - CSP Timetable Scheduler{% endblock %}
+
+{% block content %}
+    <section class="timetable">
+        <h2>Generated Timetable</h2>
+        
+        <div class="timetable-legend">
+            <h4>Legend:</h4>
+            <div class="legend-item lecture">Lecture</div>
+            <div class="legend-item td">TD (Tutorial)</div>
+            <div class="legend-item tp">TP (Practical)</div>
+        </div>
+        
+        <div class="timetable-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Day</th>
+                        {% for slot in range(1, 6) %}
+                            <th>Slot {{ slot }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for day in ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"] %}
+                        <tr>
+                            <td class="day">{{ day }}</td>
+                            {% for slot in range(1, 6) %}
+                                <td class="{% if day == 'Tuesday' and slot > 3 %}inactive{% endif %}">
+                                    {% if day in timetable and slot in timetable[day] %}
+                                        {% for session in timetable[day][slot] %}
+                                            <div class="session {{ 'lecture' if 'lecture' in session.type else 'td' if 'td' in session.type else 'tp' }}">
+                                                <div class="course">{{ session.course }}</div>
+                                                <div class="type">{{ session.type }}</div>
+                                                <div class="teacher">{{ session.teacher }}</div>
+                                            </div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="controls">
+            <a href="{{ url_for('index') }}" class="btn">Go Back</a>
+            <button onclick="window.print()" class="btn print-btn">Print Timetable</button>
+        </div>
+    </section>
+{% endblock %}

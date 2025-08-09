@@ -6,46 +6,39 @@ import math
 from game import GameBoard, PLAYER_PIECE, AI_PIECE, ROW_COUNT, COLUMN_COUNT
 from player import Player, HumanPlayer, AIPlayer, PLAYER, AI
 
-# Modern color scheme
 NAVY = (31, 58, 147)
 DARK_GRAY = (40, 40, 40)
 WHITE = (255, 255, 255)
 LIGHT_BLUE = (65, 131, 215)
 ORANGE = (242, 96, 12)
 
-# Game styling constants
 SQUARESIZE = 100
 RADIUS = int(SQUARESIZE/2 - 10)
 BORDER_WIDTH = 3
 TITLE_HEIGHT = 80
 
-# Screen resolution
-WIDTH = COLUMN_COUNT * SQUARESIZE
-HEIGHT = (ROW_COUNT+1) * SQUARESIZE + TITLE_HEIGHT
+WIDTH = COLUMN_COUNT * SQUARESIZE 
+HEIGHT = ((ROW_COUNT+1) * SQUARESIZE + TITLE_HEIGHT) 
 
 def draw_board(screen, game_board):
-    """Draw the game board on the screen."""
-    # Draw title bar
+    # title bar
     pygame.draw.rect(screen, DARK_GRAY, (0, 0, WIDTH, TITLE_HEIGHT))
     
-    # Draw game area background
+    # area background
     pygame.draw.rect(screen, NAVY, (0, TITLE_HEIGHT, WIDTH, HEIGHT - TITLE_HEIGHT))
     
-    # Draw grid and empty slots
+    #  grid 
     for c in range(COLUMN_COUNT):
         for r in range(ROW_COUNT):
-            # Draw cell with border
             rect_x = c * SQUARESIZE
             rect_y = r * SQUARESIZE + TITLE_HEIGHT + SQUARESIZE
             pygame.draw.rect(screen, NAVY, (rect_x, rect_y, SQUARESIZE, SQUARESIZE))
             
-            # Draw circular hole
             circle_x = rect_x + SQUARESIZE//2
             circle_y = rect_y + SQUARESIZE//2
             pygame.draw.circle(screen, DARK_GRAY, (circle_x, circle_y), RADIUS)
             pygame.draw.circle(screen, WHITE, (circle_x, circle_y), RADIUS - BORDER_WIDTH)
     
-    # Draw pieces
     for c in range(COLUMN_COUNT):
         for r in range(ROW_COUNT):
             circle_x = c * SQUARESIZE + SQUARESIZE//2
@@ -53,14 +46,11 @@ def draw_board(screen, game_board):
             
             if game_board.board[r][c] == PLAYER_PIECE:
                 pygame.draw.circle(screen, ORANGE, (circle_x, circle_y), RADIUS)
-                # Add 3D effect
                 pygame.draw.circle(screen, (255, 140, 50), (circle_x, circle_y), RADIUS - 5)
             elif game_board.board[r][c] == AI_PIECE:
                 pygame.draw.circle(screen, LIGHT_BLUE, (circle_x, circle_y), RADIUS)
-                # Add 3D effect
                 pygame.draw.circle(screen, (100, 180, 255), (circle_x, circle_y), RADIUS - 5)
     
-    # Display title
     title_font = pygame.font.SysFont("Arial", 36, bold=True)
     title = title_font.render("CONNECT FOUR", True, WHITE)
     screen.blit(title, (WIDTH//2 - title.get_width()//2, TITLE_HEIGHT//2 - title.get_height()//2))
@@ -89,33 +79,25 @@ def show_winner_message(screen, winner):
     pygame.display.update()
 
 def main():
-    # Initialize pygame
     pygame.init()
     pygame.display.set_caption('Connect Four AI')
     
-    # Create the screen
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     
-    # Initialize game
     game_board = GameBoard()
     game_board.print_board()
     game_over = False
     winner = None
     
-    # Create fonts
     message_font = pygame.font.SysFont("Arial", 36)
     
-    # Draw initial board
     draw_board(screen, game_board)
     
-    # Randomly decide who goes first
     turn = random.randint(PLAYER, AI)
     
-    # Create players
     human_player = HumanPlayer(PLAYER_PIECE)
     ai_player = AIPlayer(AI_PIECE, difficulty=5)
     
-    # Game loop
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:

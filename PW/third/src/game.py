@@ -51,28 +51,24 @@ class GameBoard:
     
     def winning_move(self, piece):
         """Check if the given piece has a winning configuration on the board."""
-        # Check horizontal locations for win
         for c in range(COLUMN_COUNT-3):
             for r in range(ROW_COUNT):
                 if (self.board[r][c] == piece and self.board[r][c+1] == piece and 
                     self.board[r][c+2] == piece and self.board[r][c+3] == piece):
                     return True
 
-        # Check vertical locations for win
         for c in range(COLUMN_COUNT):
             for r in range(ROW_COUNT-3):
                 if (self.board[r][c] == piece and self.board[r+1][c] == piece and 
                     self.board[r+2][c] == piece and self.board[r+3][c] == piece):
                     return True
 
-        # Check positively sloped diagonals
         for c in range(COLUMN_COUNT-3):
             for r in range(ROW_COUNT-3):
                 if (self.board[r][c] == piece and self.board[r+1][c+1] == piece and 
                     self.board[r+2][c+2] == piece and self.board[r+3][c+3] == piece):
                     return True
 
-        # Check negatively sloped diagonals
         for c in range(COLUMN_COUNT-3):
             for r in range(3, ROW_COUNT):
                 if (self.board[r][c] == piece and self.board[r-1][c+1] == piece and 

@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - CSP Timetable Scheduler{% endblock %}
+
+{% block content %}
+    <section class="info">
+        <h2>Timetable Scheduler for 1CS Students - Semester 2</h2>
+        <p>This application uses Constraint Satisfaction Problem (CSP) techniques to generate a feasible timetable for 1CS students.</p>
+        
+        <h3>Constraints:</h3>
+        <div class="constraints">
+            <div class="constraint-group">
+                <h4>Hard Constraints:</h4>
+                <ul>
+                    <li>C1: The week consists of five days: Sunday, Monday, Tuesday, Wednesday, and Thursday.</li>
+                    <li>C2: Each day has five work slots, except Tuesday which has only three in the morning.</li>
+                    <li>C3: Four or five successive slots of work are not accepted (max three successive slots).</li>
+                    <li>C4: Lectures of the same course should not be scheduled in the same slot.</li>
+                    <li>C5: Different courses for the same group should have different slot allocations.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+    
+    <section class="variables">
+        <h3>Variables: Sessions (Course, Course Type, group ,  Teacher)</h3>
+        <div class="variable-list">
+            <ul>
+                <li>Sécurité (lecture) - Teacher 1</li>
+                <li>Sécurité (td (Group 01)) - Teacher 1</li>
+                <li>Sécurité (td (Group 02)) - Teacher 1</li>
+                <li>Sécurité (td (Group 03)) - Teacher 1</li>
+                <li>Sécurité (td (Group 04)) - Teacher 1</li>
+                <li>Sécurité (td (Group 05)) - Teacher 1</li>
+                <li>Méthodes formelles (lecture) - Teacher 2</li>
+                <li>Méthodes formelles (td (Group 01)) - Teacher 2</li>
+                <li>Méthodes formelles (td (Group 02)) - Teacher 2</li>
+                <li>Méthodes formelles (td (Group 03)) - Teacher 2</li>
+                <li>Méthodes formelles (td (Group 04)) - Teacher 2</li>
+                <li>Méthodes formelles (td (Group 05)) - Teacher 2</li>
+                <li>Analyse numérique (lecture) - Teacher 3</li>
+                <li>Analyse numérique (td (Group 01)) - Teacher 3</li>
+                <li>Analyse numérique (td (Group 02)) - Teacher 3</li>
+                <li>Analyse numérique (td (Group 03)) - Teacher 3</li>
+                <li>Analyse numérique (td (Group 04)) - Teacher 3</li>
+                <li>Analyse numérique (td (Group 05)) - Teacher 3</li>
+                <li>Entrepreneuriat (lecture) - Teacher 4</li>
+                <li>Recherche opérationnelle 2 (lecture) - Teacher 5</li>
+                <li>Recherche opérationnelle 2 (td (Group 01)) - Teacher 5</li>
+                <li>Recherche opérationnelle 2 (td (Group 02)) - Teacher 5</li>
+                <li>Recherche opérationnelle 2 (td (Group 03)) - Teacher 5</li>
+                <li>Recherche opérationnelle 2 (td (Group 04)) - Teacher 5</li>
+                <li>Recherche opérationnelle 2 (td (Group 05)) - Teacher 5</li>
+                <li>Distributed Architecture & Intensive Computing (lecture) - Teacher 6</li>
+                <li>Distributed Architecture & Intensive Computing (td (Group 01)) - Teacher 6</li>
+                <li>Distributed Architecture & Intensive Computing (td (Group 02)) - Teacher 6</li>
+                <li>Distributed Architecture & Intensive Computing (td (Group 03)) - Teacher 6</li>
+                <li>Distributed Architecture & Intensive Computing (td (Group 04)) - Teacher 6</li>
+                <li>Distributed Architecture & Intensive Computing (td (Group 05)) - Teacher 6</li>
+                <li>Réseaux 2 (lecture) - Teacher 7</li>
+                <li>Réseaux 2 (td (Group 01)) - Teacher 7A</li>
+                <li>Réseaux 2 (td (Group 02)) - Teacher 7A</li>
+                <li>Réseaux 2 (td (Group 03)) - Teacher 7A</li>
+                <li>Réseaux 2 (td (Group 04)) - Teacher 7A</li>
+                <li>Réseaux 2 (td (Group 05)) - Teacher 7A</li>
+                <li>Réseaux 2 (tp (Group 01)) - Teacher 7</li>
+                <li>Réseaux 2 (tp (Group 02)) - Teacher 7</li>
+                <li>Réseaux 2 (tp (Group 03)) - Teacher 7</li>
+                <li>Réseaux 2 (tp (Group 04)) - Teacher 7</li>
+                <li>Réseaux 2 (tp (Group 05)) - Teacher 7</li>
+                <li>Artificial Intelligence (lecture) - Teacher 11</li>
+                <li>Artificial Intelligence (td (Group 01)) - Teacher 11</li>
+                <li>Artificial Intelligence (td (Group 02)) - Teacher 11</li>
+                <li>Artificial Intelligence (td (Group 03)) - Teacher 11</li>
+                <li>Artificial Intelligence (td (Group 04)) - Teacher 11</li>
+                <li>Artificial Intelligence (td (Group 05)) - Teacher 11</li>
+                <li>Artificial Intelligence (tp (Group 01)) - Teacher 12</li>
+                <li>Artificial Intelligence (tp (Group 02)) - Teacher 13</li>
+                <li>Artificial Intelligence (tp (Group 03)) - Teacher 14</li>
+                <li>Artificial Intelligence (tp (Group 04)) - Teacher 12</li>
+                <li>Artificial Intelligence (tp (Group 05)) - Teacher 13</li>
+            </ul>
+        </div>
+    </section>
+    
+    <section class="domains">
+        <h3>Domains (Available Time Slots)</h3>
+        <div class="domain-info">
+            <ul>
+                <li><strong>Sunday:</strong> Slots 1, 2, 3, 4, 5</li>
+                <li><strong>Monday:</strong> Slots 1, 2, 3, 4, 5</li>
+                <li><strong>Tuesday:</strong> Slots 1, 2, 3 (morning only)</li>
+                <li><strong>Wednesday:</strong> Slots 1, 2, 3, 4, 5</li>
+                <li><strong>Thursday:</strong> Slots 1, 2, 3, 4, 5</li>
+            </ul>
+        </div>
+    </section>
+    
+    <section class="generate">
+        <h2>Generate Timetable</h2>
+        <p>Click the button below to generate a timetable based on the predefined courses and constraints.</p>
+        
+        <form action="{{ url_for('generate_timetable') }}" method="post">
+            <button type="submit" class="btn">Generate Timetable</button>
+        </form>
+    </section>
+{% endblock %}

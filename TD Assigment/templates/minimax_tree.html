@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Minimax Tree with Alpha-Beta Pruning (No Steps)</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(10px);
+      max-width: 100%;
+      width: 100%;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+      font-size: 2.5em;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 15px 30px;
+      border: none;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+      color: white;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .tree-container {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 80px;
+      overflow-x: auto;
+      padding: 20px;
+      min-height: 800px;
+      /* Guarantee enough width for 16 leaves */
+      min-width: 1800px;
+    }
+
+    .level {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      z-index: 10;
+    }
+
+    .level-0 { gap: 0; }
+    .level-1 { gap: 500px; }
+    .level-2 { gap: 220px; }
+    .level-3 { gap: 100px; }
+    .level-4 { gap: 30px; }
+
+    .node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      z-index: 15;
+    }
+
+    .node:hover {
+      transform: scale(1.05);
+    }
+
+    .triangle-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .triangle {
+      width: 0;
+      height: 0;
+      position: relative;
+      transition: all 0.3s ease;
+      filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.3));
+    }
+
+    .triangle-up {
+      border-left: 35px solid transparent;
+      border-right: 35px solid transparent;
+      border-bottom: 60px solid #4CAF50;
+    }
+
+    .triangle-down {
+      border-left: 35px solid transparent;
+      border-right: 35px solid transparent;
+      border-top: 60px solid #f44336;
+    }
+
+    .triangle-value {
+      position: absolute;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+      z-index: 20;
+      pointer-events: none;
+      min-width: 30px;
+      text-align: center;
+    }
+
+    /* Adjust triangle value positioning */
+    .triangle-up .triangle-value {
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .triangle-down .triangle-value {
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .node:hover .triangle-up {
+      border-bottom-color: #45a049;
+      transform: scale(1.05);
+    }
+
+    .node:hover .triangle-down {
+      border-top-color: #da190b;
+      transform: scale(1.05);
+    }
+
+    .node-label {
+      margin-top: 12px;
+      font-weight: bold;
+      color: #333;
+      font-size: 14px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 4px 8px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+
+    .leaf-node {
+      background: linear-gradient(145deg, #FFD700, #FFA500);
+      border: 3px solid #FF8C00;
+      border-radius: 15px;
+      padding: 12px 16px; /* reduced from 18px 24px */
+      font-size: 16px;    /* reduced from 20px */
+      font-weight: bold;
+      color: #333;
+      min-width: 40px;    /* slightly narrower */
+      text-align: center;
+      box-shadow: 0 6px 15px rgba(255, 140, 0, 0.4);
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 15;
+    }
+
+    .leaf-node:hover {
+      background: linear-gradient(145deg, #FFE55C, #FFB347);
+      transform: scale(1.1);
+      box-shadow: 0 8px 20px rgba(255, 140, 0, 0.6);
+    }
+
+    .level-info {
+      position: absolute;
+      left: -140px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: linear-gradient(45deg, #333, #555);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: bold;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .pruned {
+      position: relative;
+      opacity: 0.2;
+      filter: grayscale(100%);
+    }
+
+    .pruned::after {
+      content: '✗';
+      position: absolute;
+      top: 50%; 
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 40px;
+      color: #ff0000;
+      font-weight: bold;
+      text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+      z-index: 100;
+      animation: prune-animation 0.8s ease-in-out;
+    }
+
+    @keyframes prune-animation {
+      0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 0; }
+      50% { transform: translate(-50%, -50%) scale(1.3) rotate(180deg); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1) rotate(360deg); opacity: 1; }
+    }
+
+    .alpha-beta-info {
+      position: absolute;
+      top: -20px; /* slightly higher to avoid overlap */
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(45deg, #2196F3, #1976D2);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: bold;
+      white-space: nowrap;
+      z-index: 25;
+      box-shadow: 0 3px 8px rgba(33, 150, 243, 0.4);
+    }
+
+    /* Connection Lines */
+    .connection-line {
+      position: absolute;
+      background: linear-gradient(90deg, #ff9800, #f44336);
+      height: 4px;
+      border-radius: 2px;
+      z-index: 1;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .connection-curve {
+      position: absolute;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .result {
+      margin-top: 20px;
+      padding: 25px;
+      background: linear-gradient(145deg, rgba(76, 175, 80, 0.1), rgba(139, 195, 74, 0.1));
+      border: 3px solid #4CAF50;
+      border-radius: 15px;
+      text-align: center;
+      font-size: 18px;
+      color: #2e7d32;
+      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+      display: none;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 1600px) {
+      .level-1 { gap: 400px; }
+      .level-2 { gap: 180px; }
+      .level-3 { gap: 80px; }
+      .level-4 { gap: 20px; }
+
+      .leaf-node {
+        padding: 10px 12px;
+        font-size: 14px;
+        min-width: 35px;
+      }
+    }
+
+    @media (max-width: 1200px) {
+      .level-1 { gap: 300px; }
+      .level-2 { gap: 140px; }
+      .level-3 { gap: 60px; }
+      .level-4 { gap: 15px; }
+
+      .leaf-node {
+        padding: 8px 10px;
+        font-size: 12px;
+        min-width: 30px;
+      }
+
+      .level-info {
+        position: static;
+        margin-bottom: 20px;
+        left: auto;
+        top: auto;
+        transform: none;
+        display: inline-block;
+      }
+
+      .controls {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .tree-container {
+          min-width: 1200px;
+        }
+
+        .level-info {
+          font-size: 12px;
+        }
+
+        .leaf-node {
+          font-size: 14px;
+          padding: 8px 10px;
+        }
+      }
+    }
+
+    /* Enhanced Node Highlighting */
+    .active-node {
+      animation: highlight 1.2s ease-in-out;
+    }
+
+    @keyframes highlight {
+      0% { transform: scale(1); box-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+      50% { transform: scale(1.1); box-shadow: 0 0 20px rgba(255, 255, 0, 0.8); }
+      100% { transform: scale(1); box-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+    }
+
+    /* Enhanced Tooltip */
+    .node:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      top: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      white-space: nowrap;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎯 Enhanced Minimax Tree with Alpha-Beta Pruning</h1>
+    
+    <div class="controls">
+      <button class="btn btn-primary" onclick="calculateMinimax()">🧮 Calculate Minimax</button>
+      <button class="btn btn-secondary" onclick="calculateAlphaBeta()">⚡ Alpha-Beta Pruning</button>
+      <button class="btn btn-primary" onclick="resetTree()">🔄 Reset Tree</button>
+    </div>
+    
+    <div class="tree-container" id="tree-container">
+      <!-- SVG for curved connections -->
+      <svg class="connection-curve" width="100%" height="100%" style="position: absolute; top: 0; left: 0;">
+        <defs>
+          <linearGradient id="connectionGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#667eea;stop-opacity:0.8" />
+            <stop offset="50%" style="stop-color:#764ba2;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#667eea;stop-opacity:0.8" />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      <!-- Level 0: MAX -->
+      <div class="level level-0">
+        <div class="level-info">Level 0 (MAX)</div>
+        <div class="node" data-level="0" data-index="0" id="node-container-0-0">
+          <div class="triangle-container">
+            <div class="triangle triangle-up">
+              <div class="triangle-value" id="node-0-0">?</div>
+            </div>
+          </div>
+          <div class="node-label">ROOT</div>
+        </div>
+      </div>
+
+      <!-- Level 1: MIN -->
+      <div class="level level-1">
+        <div class="level-info">Level 1 (MIN)</div>
+        <div class="node" data-level="1" data-index="0" id="node-container-1-0">
+          <div class="triangle-container">
+            <div class="triangle triangle-down">
+              <div class="triangle-value" id="node-1-0">?</div>
+            </div>
+          </div>
+          <div class="node-label">LEFT</div>
+        </div>
+        <div class="node" data-level="1" data-index="1" id="node-container-1-1">
+          <div class="triangle-container">
+            <div class="triangle triangle-down">
+              <div class="triangle-value" id="node-1-1">?</div>
+            </div>
+          </div>
+          <div class="node-label">RIGHT</div>
+        </div>
+      </div>
+
+      <!-- Level 2: MAX -->
+      <div class="level level-2">
+        <div class="level-info">Level 2 (MAX)</div>
+        <div class="node" data-level="2" data-index="0" id="node-container-2-0">
+          <div class="triangle-container">
+            <div class="triangle triangle-up">
+              <div class="triangle-value" id="node-2-0">?</div>
+            </div>
+          </div>
+        </div>
+        <div class="node" data-level="2" data-index="1" id="node-container-2-1">
+          <div class="triangle-container">
+            <div class="triangle triangle-up">
+              <div class="triangle-value" id="node-2-1">?</div>
+            </div>
+          </div>
+        </div>
+        <div class="node" data-level="2" data-index="2" id="node-container-2-2">
+          <div class="triangle-container">
+            <div class="triangle triangle-up">
+              <div class="triangle-value" id="node-2-2">?</div>
+            </div>
+          </div>
+        </div>
+        <div class="node" data-level="2" data-index="3" id="node-container-2-3">
+          <div class="triangle-container">
+            <div class="triangle triangle-up">
+              <div class="triangle-value" id="node-2-3">?</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Level 3: MIN -->
+      <div class="level level-3">
+        <div class="level-info">Level 3 (MIN)</div>
+        <div class="node" data-level="3" data-index="0" id="node-container-3-0">
+          <div class="triangle-container">
+            <div class="triangle triangle-down">
+              <div class="triangle-value" id="node-3-0">?</div>
+            </div>
+          </div>
+        </div>
+        <div class="node" data-level="3" data-index="1" id="node-container-3-1">
+          <div class="triangle-container">
+            <div class="triangle triangle-down">
+              <div class="triangle-value" id="node-3-1">?</div>
+            </div>
+          </div>
+        </div>
+        <div class="node" data-level="3" data-index="2" id="node-container-3-2">
+          <div class="triangle-container">
+            <div class="triangle triangle-down">
+              <div class="triangle-value" id="node-3-2">?</div>
+            </div>
+          </div>
+        </div>
+        <div class="node" data-level="3" data-index="3" id="node-container-3-3">
+          <div class="triangle-container">
+            <div class="triangle triangle-down">
+              <div class="triangle-value" id="node-3-3">?</div>
+            </div>
+          </div>
+        </div>
+        <div class="node" data-level="3" data-index="4" id="node-container-3-4">
+          <div class="triangle-container">
+            <div class="triangle triangle-down">
+              <div class="triangle-value" id="node-3-4">?</div>
+            </div>
+          </div>
+        </div>
+        <div class="node" data-level="3" data-index="5" id="node-container-3-5">
+          <div class="triangle-container">
+            <div class="triangle triangle-down">
+              <div class="triangle-value" id="node-3-5">?</div>
+            </div>
+          </div>
+        </div>
+        <div class="node" data-level="3" data-index="6" id="node-container-3-6">
+          <div class="triangle-container">
+            <div class="triangle triangle-down">
+              <div class="triangle-value" id="node-3-6">?</div>
+            </div>
+          </div>
+        </div>
+        <div class="node" data-level="3" data-index="7" id="node-container-3-7">
+          <div class="triangle-container">
+            <div class="triangle triangle-down">
+              <div class="triangle-value" id="node-3-7">?</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Level 4: LEAF VALUES -->
+      <div class="level level-4">
+        <div class="level-info">Level 4 (LEAVES)</div>
+        <div class="leaf-node" data-index="0" id="leaf-0">-2</div>
+        <div class="leaf-node" data-index="1" id="leaf-1">4</div>
+        <div class="leaf-node" data-index="2" id="leaf-2">6</div>
+        <div class="leaf-node" data-index="3" id="leaf-3">-8</div>
+        <div class="leaf-node" data-index="4" id="leaf-4">-3</div>
+        <div class="leaf-node" data-index="5" id="leaf-5">-1</div>
+        <div class="leaf-node" data-index="6" id="leaf-6">7</div>
+        <div class="leaf-node" data-index="7" id="leaf-7">-5</div>
+        <div class="leaf-node" data-index="8" id="leaf-8">-2</div>
+        <div class="leaf-node" data-index="9" id="leaf-9">-4</div>
+        <div class="leaf-node" data-index="10" id="leaf-10">-6</div>
+        <div class="leaf-node" data-index="11" id="leaf-11">8</div>
+        <div class="leaf-node" data-index="12" id="leaf-12">3</div>
+        <div class="leaf-node" data-index="13" id="leaf-13">1</div>
+        <div class="leaf-node" data-index="14" id="leaf-14">-7</div>
+        <div class="leaf-node" data-index="15" id="leaf-15">5</div>
+      </div>
+    </div>
+
+    <div id="result" class="result"></div>
+  </div>
+
+  <script>
+    // Leaf values as before
+    const leafValues = [-2, 4, 6, -8, -3, -1, 7, -5, -2, -4, -6, 8, 3, 1, -7, 5];
+
+    function initializeConnections() {
+      setTimeout(() => {
+        drawAllConnections();
+      }, 100);
+    }
+
+    function drawAllConnections() {
+      const svg = document.querySelector('.connection-curve');
+      svg.innerHTML = '<defs><linearGradient id="connectionGradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#667eea;stop-opacity:0.8" /><stop offset="50%" style="stop-color:#764ba2;stop-opacity:1" /><stop offset="100%" style="stop-color:#667eea;stop-opacity:0.8" /></linearGradient></defs>';
+      
+      // Connect Level 0 to Level 1
+      drawConnection(0, 0, 1, 0);
+      drawConnection(0, 0, 1, 1);
+      
+      // Connect Level 1 to Level 2
+      for (let i = 0; i < 2; i++) {
+        drawConnection(1, i, 2, i * 2);
+        drawConnection(1, i, 2, i * 2 + 1);
+      }
+      
+      // Connect Level 2 to Level 3
+      for (let i = 0; i < 4; i++) {
+        drawConnection(2, i, 3, i * 2);
+        drawConnection(2, i, 3, i * 2 + 1);
+      }
+      
+      // Connect Level 3 to Level 4 (leaves)
+      for (let i = 0; i < 8; i++) {
+        drawConnectionToLeaf(3, i, i * 2);
+        drawConnectionToLeaf(3, i, i * 2 + 1);
+      }
+    }
+
+    function drawConnection(fromLevel, fromIndex, toLevel, toIndex) {
+      const fromEl = document.getElementById(`node-container-${fromLevel}-${fromIndex}`);
+      const toEl   = document.getElementById(`node-container-${toLevel}-${toIndex}`);
+      if (!fromEl || !toEl) return;
+      
+      const fromRect = fromEl.getBoundingClientRect();
+      const toRect   = toEl.getBoundingClientRect();
+      const containerRect = document.getElementById('tree-container').getBoundingClientRect();
+      
+      const fromX = fromRect.left + fromRect.width / 2 - containerRect.left;
+      const fromY = fromRect.bottom - containerRect.top - 10;
+      const toX   = toRect.left + toRect.width / 2 - containerRect.left;
+      const toY   = toRect.top - containerRect.top + 10;
+      
+      const svg = document.querySelector('.connection-curve');
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      const midY = (fromY + toY) / 2;
+      const d = `M ${fromX} ${fromY} Q ${fromX} ${midY} ${toX} ${toY}`;
+      path.setAttribute('d', d);
+      path.setAttribute('stroke', 'url(#connectionGradient)');
+      path.setAttribute('stroke-width', '3');
+      path.setAttribute('fill', 'none');
+      path.setAttribute('opacity', '0.8');
+      path.setAttribute('class', `connection-${fromLevel}-${fromIndex}-to-${toLevel}-${toIndex}`);
+      svg.appendChild(path);
+    }
+
+    function drawConnectionToLeaf(fromLevel, fromIndex, leafIndex) {
+      const fromEl = document.getElementById(`node-container-${fromLevel}-${fromIndex}`);
+      const toEl   = document.getElementById(`leaf-${leafIndex}`);
+      if (!fromEl || !toEl) return;
+      
+      const fromRect = fromEl.getBoundingClientRect();
+      const toRect   = toEl.getBoundingClientRect();
+      const containerRect = document.getElementById('tree-container').getBoundingClientRect();
+      
+      const fromX = fromRect.left + fromRect.width / 2 - containerRect.left;
+      const fromY = fromRect.bottom - containerRect.top - 10;
+      const toX   = toRect.left + toRect.width / 2 - containerRect.left;
+      const toY   = toRect.top - containerRect.top + 5;
+      
+      const svg = document.querySelector('.connection-curve');
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      const midY = (fromY + toY) / 2;
+      const d = `M ${fromX} ${fromY} Q ${fromX} ${midY} ${toX} ${toY}`;
+      path.setAttribute('d', d);
+      path.setAttribute('stroke', 'url(#connectionGradient)');
+      path.setAttribute('stroke-width', '3');
+      path.setAttribute('fill', 'none');
+      path.setAttribute('opacity', '0.8');
+      path.setAttribute('class', `connection-${fromLevel}-${fromIndex}-to-leaf-${leafIndex}`);
+      svg.appendChild(path);
+    }
+
+    function resetTree() {
+      // Reset node values
+      for (let lvl = 0; lvl <= 3; lvl++) {
+        const count = Math.pow(2, lvl);
+        for (let i = 0; i < count; i++) {
+          document.getElementById(`node-${lvl}-${i}`).textContent = '?';
+        }
+      }
+      // Remove pruned/active classes
+      document.querySelectorAll('.node, .leaf-node').forEach(el => {
+        el.classList.remove('pruned','active-node');
+        const info = el.querySelector('.alpha-beta-info');
+        if (info) info.remove();
+      });
+      // Restore connection styles
+      document.querySelectorAll('path').forEach(p => {
+        p.setAttribute('opacity','0.8');
+        p.setAttribute('stroke','url(#connectionGradient)');
+      });
+      // Hide result
+      document.getElementById('result').style.display = 'none';
+    }
+
+    function calculateMinimax() {
+      resetTree();
+      // Level 3 (MIN)
+      const lvl3 = [];
+      for (let i = 0; i < 8; i++) {
+        const left  = leafValues[i*2];
+        const right = leafValues[i*2+1];
+        const mn = Math.min(left,right);
+        lvl3.push(mn);
+        setTimeout(() => {
+          highlightNode(3,i);
+          document.getElementById(`node-3-${i}`).textContent = mn;
+        }, i*250);
+      }
+      // Level 2 (MAX)
+      setTimeout(() => {
+        const lvl2 = [];
+        for (let i = 0; i < 4; i++) {
+          const l = lvl3[i*2];
+          const r = lvl3[i*2+1];
+          const mx = Math.max(l,r);
+          lvl2.push(mx);
+          setTimeout(() => {
+            highlightNode(2,i);
+            document.getElementById(`node-2-${i}`).textContent = mx;
+          }, i*250);
+        }
+        // Level 1 (MIN)
+        setTimeout(() => {
+          const lvl1 = [];
+          for (let i = 0; i < 2; i++) {
+            const l = lvl2[i*2];
+            const r = lvl2[i*2+1];
+            const mn = Math.min(l,r);
+            lvl1.push(mn);
+            setTimeout(() => {
+              highlightNode(1,i);
+              document.getElementById(`node-1-${i}`).textContent = mn;
+            }, i*250);
+          }
+          // Root (MAX)
+          setTimeout(() => {
+            const rootVal = Math.max(lvl1[0],lvl1[1]);
+            highlightNode(0,0);
+            document.getElementById('node-0-0').textContent = rootVal;
+            showResult("Minimax", rootVal, lvl3, lvl2, lvl1);
+          }, 800);
+        }, 1200);
+      }, 2000);
+    }
+
+    function calculateAlphaBeta() {
+      resetTree();
+      const pruned = new Set();
+      let alpha = -Infinity, beta = Infinity;
+
+      function alphaBeta(level, idx, isMax, α, β) {
+        if (level === 4) {
+          const val = leafValues[idx];
+          highlightLeaf(idx);
+          return val;
+        }
+        if (isMax) {
+          let value = -Infinity;
+          for (let i = 0; i < 2; i++) {
+            const child = idx*2 + i;
+            if (pruned.has(`${level+1}-${child}`)) continue;
+            const childVal = alphaBeta(level+1, child, false, α, β);
+            value = Math.max(value, childVal);
+            if (value >= β) {
+              for (let j = i+1; j < 2; j++) {
+                const prChild = idx*2 + j;
+                pruned.add(`${level+1}-${prChild}`);
+                markSubtreeAsPruned(level+1, prChild);
+                fadeConnectionsToSubtree(level, idx, level+1, prChild);
+              }
+              break;
+            }
+            α = Math.max(α, value);
+          }
+          document.getElementById(`node-${level}-${idx}`).textContent = value;
+          addAlphaBetaInfo(level, idx, α, β);
+          highlightNode(level, idx);
+          return value;
+        } else {
+          let value = Infinity;
+          for (let i = 0; i < 2; i++) {
+            const child = idx*2 + i;
+            if (pruned.has(`${level+1}-${child}`)) continue;
+            const childVal = alphaBeta(level+1, child, true, α, β);
+            value = Math.min(value, childVal);
+            if (value <= α) {
+              for (let j = i+1; j < 2; j++) {
+                const prChild = idx*2 + j;
+                pruned.add(`${level+1}-${prChild}`);
+                markSubtreeAsPruned(level+1, prChild);
+                fadeConnectionsToSubtree(level, idx, level+1, prChild);
+              }
+              break;
+            }
+            β = Math.min(β, value);
+          }
+          document.getElementById(`node-${level}-${idx}`).textContent = value;
+          addAlphaBetaInfo(level, idx, α, β);
+          highlightNode(level, idx);
+          return value;
+        }
+      }
+
+      const result = alphaBeta(0, 0, true, alpha, beta);
+      showResult("Alpha-Beta Pruning", result, null, null, null, pruned.size);
+    }
+
+    function highlightNode(level, index) {
+      const el = document.getElementById(`node-container-${level}-${index}`);
+      if (el) {
+        el.classList.add('active-node');
+        setTimeout(() => el.classList.remove('active-node'), 1200);
+      }
+    }
+
+    function highlightLeaf(index) {
+      const leaf = document.getElementById(`leaf-${index}`);
+      if (leaf) {
+        leaf.classList.add('active-node');
+        setTimeout(() => leaf.classList.remove('active-node'), 1200);
+      }
+    }
+
+    function markNodeAsPruned(level, index) {
+      if (level === 4) {
+        const leaf = document.getElementById(`leaf-${index}`);
+        if (leaf) leaf.classList.add('pruned');
+      } else {
+        const node = document.getElementById(`node-container-${level}-${index}`);
+        if (node) node.classList.add('pruned');
+      }
+    }
+
+    function markSubtreeAsPruned(level, index) {
+      markNodeAsPruned(level, index);
+      if (level < 4) {
+        for (let i = 0; i < 2; i++) {
+          markSubtreeAsPruned(level+1, index*2 + i);
+        }
+      }
+    }
+
+    function fadeConnection(fromLevel, fromIndex, leafIndex) {
+      const conn = document.querySelector(`.connection-${fromLevel}-${fromIndex}-to-leaf-${leafIndex}`);
+      if (conn) {
+        conn.setAttribute('opacity', '0.2');
+        conn.setAttribute('stroke', '#ff0000');
+      }
+    }
+
+    function fadeConnectionsToSubtree(fromLevel, fromIndex, toLevel, toIndex) {
+      const conn = document.querySelector(`.connection-${fromLevel}-${fromIndex}-to-${toLevel}-${toIndex}`);
+      if (conn) {
+        conn.setAttribute('opacity', '0.2');
+        conn.setAttribute('stroke', '#ff0000');
+      }
+      if (toLevel < 4) {
+        for (let i = 0; i < 2; i++) {
+          fadeConnectionsToSubtree(toLevel, toIndex, toLevel+1, toIndex*2 + i);
+        }
+      } else if (toLevel === 3) {
+        // fade leaves as well
+        for (let i = 0; i < 2; i++) {
+          fadeConnection(toLevel, toIndex, toIndex*2 + i);
+        }
+      }
+    }
+
+    function addAlphaBetaInfo(level, index, α, β) {
+      if (level === 0 && index === 0) return; // Skip root node
+      const node = document.getElementById(`node-container-${level}-${index}`);
+      if (!node) return;
+      const info = document.createElement('div');
+      info.className = 'alpha-beta-info';
+      info.textContent = `α:${α === -Infinity ? '-∞' : α}, β:${β === Infinity ? '+∞' : β}`;
+      node.appendChild(info);
+    }
+
+    // Add tooltips dynamically
+    document.querySelectorAll('.node').forEach(node => {
+      const level = node.dataset.level;
+      const index = node.dataset.index;
+      const type = ['MAX', 'MIN', 'MAX', 'MIN'][level];
+      node.setAttribute('data-tooltip', `Level ${level} (${type}) - Node ${index}`);
+    });
+
+    // Enhanced result display
+    function showResult(algorithm, result, lvl3, lvl2, lvl1, prunedCount = 0) {
+      const resDiv = document.getElementById('result');
+      let html = `
+        <h3>🎯 ${algorithm} Result</h3>
+        <p style="font-size: 24px; font-weight: bold; color: #2e7d32;">
+          Optimal value: ${result}
+        </p>
+      `;
+      if (lvl3) {
+        html += `
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+            <div style="background: rgba(244, 67, 54, 0.1); padding: 10px; border-radius: 8px; border: 2px solid #f44336;">
+              <strong>Level 3 (MIN):</strong><br>[${lvl3.join(', ')}]
+            </div>
+            <div style="background: rgba(76, 175, 80, 0.1); padding: 10px; border-radius: 8px; border: 2px solid #4CAF50;">
+              <strong>Level 2 (MAX):</strong><br>[${lvl2.join(', ')}]
+            </div>
+            <div style="background: rgba(244, 67, 54, 0.1); padding: 10px; border-radius: 8px; border: 2px solid #f44336;">
+              <strong>Level 1 (MIN):</strong><br>[${lvl1.join(', ')}]
+            </div>
+          </div>
+        `;
+      }
+      if (prunedCount > 0) {
+        const eff = ((prunedCount / leafValues.length) * 100).toFixed(1);
+        html += `
+          <div style="background: rgba(255, 87, 34, 0.1); padding: 15px; border-radius: 12px; border: 2px solid #ff5722; margin-top: 20px;">
+            <h4 style="color: #ff5722; margin: 0 0 10px 0;">🚀 Pruning Efficiency</h4>
+            <p style="margin: 0; font-size: 18px;">
+              <strong>${prunedCount}</strong> branches pruned out of <strong>${leafValues.length}</strong>
+            </p>
+            <p style="margin: 5px 0 0 0; font-size: 16px; color: #ff5722;">
+              <strong>${eff}% reduction</strong> in computations!
+            </p>
+          </div>
+        `;
+      }
+      resDiv.innerHTML = html;
+      resDiv.style.display = 'block';
+    }
+
+    window.addEventListener('load', initializeConnections);
+    window.addEventListener('resize', () => {
+      setTimeout(initializeConnections, 100);
+    });
+  </script>
+</body>
+</html>
+

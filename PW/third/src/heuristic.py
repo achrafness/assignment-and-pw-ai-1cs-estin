@@ -36,7 +36,7 @@ def score_position(board, piece):
     Score the entire board position for the given piece.
     
     Args:
-        board: 2D numpy array with the current board state
+        board: array with the current board state
         piece: Piece type to evaluate for (PLAYER_PIECE or AI_PIECE)
         
     Returns:
@@ -44,7 +44,6 @@ def score_position(board, piece):
     """
     score = 0
 
-    # Score center column (preference for the center)
     center_array = [int(i) for i in list(board[:, COLUMN_COUNT//2])]
     center_count = center_array.count(piece)
     score += center_count * 3

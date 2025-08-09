@@ -20,16 +20,15 @@ def minimax(game, depth, alpha, beta, maximizing_player):
     valid_locations = game.get_valid_locations()
     is_terminal = game.is_terminal_node()
     
-    # If terminal node or max depth reached, return evaluation
     if depth == 0 or is_terminal:
         if is_terminal:
             if game.winning_move(AI_PIECE):
                 return (None, 100000000000000)
             elif game.winning_move(PLAYER_PIECE):
                 return (None, -10000000000000)
-            else:  # Game is over, no more valid moves
+            else:  
                 return (None, 0)
-        else:  # Depth is zero
+        else:  
             return (None, score_position(game.board, AI_PIECE))
     
     if maximizing_player:
@@ -57,12 +56,12 @@ def minimax(game, depth, alpha, beta, maximizing_player):
                     
         return column, value
     
-    else:  # Minimizing player
+    else: 
         value = math.inf
         column = random.choice(valid_locations)
         for col in valid_locations:
             row = game.get_next_open_row(col)
-            if row is not None:  # Check if row is not None
+            if row is not None:  
                 # Create a copy of the board and make the move
                 temp_game = copy_game_state(game)
                 temp_game.drop_piece(row, col, PLAYER_PIECE)

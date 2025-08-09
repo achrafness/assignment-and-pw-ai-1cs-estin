@@ -1,0 +1,259 @@
+class Course:
+    def __init__(self, name, teacher, has_lecture=True, has_td=True, has_tp=False, tp_teachers=None, td_teacher=None):
+        self.name = name
+        self.teacher = teacher
+        self.has_lecture = has_lecture
+        self.has_td = has_td
+        self.has_tp = has_tp
+        self.tp_teachers = tp_teachers if tp_teachers else [self.teacher]
+        self.td_teacher = td_teacher if td_teacher else self.teacher  # Default to main teacher if no TD teacher specified
+
+class TimeSlot:
+    def __init__(self, day, slot):
+        self.day = day
+        self.slot = slot
+
+    def __eq__(self, other):
+        return self.day == other.day and self.slot == other.slot
+
+    def __hash__(self):
+        return hash((self.day, self.slot))
+
+    def __str__(self):
+        return f"{self.day} - Slot {self.slot}"
+
+class Session:
+    def __init__(self, course, session_type, teacher):
+        self.course = course
+        self.session_type = session_type  
+        self.teacher = teacher
+        self.assigned_slot = None
+
+    def __str__(self):
+        return f"{self.course.name} ({self.session_type}) - {self.teacher}"
+
+class CSPSolver:
+    def __init__(self):
+        self.days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"]
+        self.slots_per_day = {"Sunday": 5, "Monday": 5, "Tuesday": 3, "Wednesday": 5, "Thursday": 5}
+        self.sessions = []
+        self.domains = {}
+        self.courses = self.initialize_courses()
+
+    def initialize_courses(self):
+        courses = [
+            Course("Sécurité", "Teacher 1"),
+            Course("Méthodes formelles", "Teacher 2"),
+            Course("Analyse numérique", "Teacher 3"),
+            Course("Entrepreneuriat", "Teacher 4", has_td=False),
+            Course("Recherche opérationnelle 2", "Teacher 5"),
+            Course("Distributed Architecture & Intensive Computing", "Teacher 6"),
+            Course("Réseaux 2", "Teacher 7", has_tp=True, td_teacher="Teacher 7A"),
+            Course("Artificial Intelligence", "Teacher 11", has_tp=True, tp_teachers=["Teacher 12", "Teacher 13", "Teacher 14"])
+        ]
+        return courses
+
+    def initialize_sessions(self):
+        self.sessions = []
+        for course in self.courses:
+            if course.has_lecture:
+                self.sessions.append(Session(course, "lecture", course.teacher))
+            if course.has_td:
+                # Now use the specific TD teacher instead of the main course teacher
+                self.sessions.append(Session(course, "td", course.td_teacher))
+            if course.has_tp:
+                # Assign one of the TP teachers randomly for simplicity
+                # In a real application, you'd have a more complex assignment logic
+                tp_teacher = course.tp_teachers[0] if course.tp_teachers else course.teacher
+                self.sessions.append(Session(course, "tp", tp_teacher))
+        # print sessions for debugging
+        for session in self.sessions:
+            print(session)
+        return self.sessions
+
+    def initialize_domains(self):
+        # For each session, initialize its domain (possible timeslots)
+        self.domains = {}
+        for session in self.sessions:
+            domain = []
+            for day in self.days:
+                for slot in range(1, self.slots_per_day[day] + 1):
+                    domain.append(TimeSlot(day, slot))
+            self.domains[session] = domain
+        
+        return self.domains
+
+    def ac3(self):
+        # Implementation of AC3 algorithm to reduce domains
+        queue = [(xi, xj) for xi in self.sessions for xj in self.sessions if xi != xj]
+        while queue:
+            (xi, xj) = queue.pop(0)
+            if self.revise(xi, xj):
+                if len(self.domains[xi]) == 0:
+                    return False
+                for xk in [x for x in self.sessions if x != xi and x != xj]:
+                    queue.append((xk, xi))
+        return True
+
+    def revise(self, xi, xj):
+        revised = False
+        to_remove = []
+        
+        for time_slot_i in self.domains[xi]:
+            if not any(self.is_consistent(xi, time_slot_i, xj, time_slot_j) 
+                        for time_slot_j in self.domains[xj]):
+                to_remove.append(time_slot_i)
+                revised = True
+        
+        for time_slot in to_remove:
+            self.domains[xi].remove(time_slot)
+        
+        return revised
+
+    def is_consistent(self, session_i, time_slot_i, session_j, time_slot_j):
+        # Check if assigning time_slot_i to session_i and time_slot_j to session_j is consistent
+        # Different sessions can't occupy the same time slot
+        if time_slot_i == time_slot_j:
+            return False
+        
+        # Lectures of the same course should not be in the same slot
+        if (session_i.course == session_j.course and 
+            session_i.session_type == session_j.session_type and
+            time_slot_i.slot == time_slot_j.slot):
+            return False
+        
+        # Teachers can't teach in two places at once
+        if session_i.teacher == session_j.teacher and time_slot_i == time_slot_j:
+            return False
+        
+        return True
+
+    def backtracking_search(self):
+        # Implement backtracking search
+        return self.backtrack({})
+
+    def backtrack(self, assignment):
+        if len(assignment) == len(self.sessions):
+            return assignment
+        
+        # Select unassigned variable (MRV heuristic)
+        unassigned = [var for var in self.sessions if var not in assignment]
+        var = min(unassigned, key=lambda var: len(self.domains[var]))
+        
+        # Try each value in the domain (LCV heuristic)
+        for value in self.order_domain_values(var, assignment):
+            if self.is_value_consistent(var, value, assignment):
+                assignment[var] = value
+                var.assigned_slot = value
+                
+                # If we have 3 consecutive sessions, check if it's allowed
+                if not self.check_consecutive_sessions(assignment):
+                    del assignment[var]
+                    var.assigned_slot = None
+                    continue
+                
+                result = self.backtrack(assignment)
+                if result:
+                    return result
+                
+                del assignment[var]
+                var.assigned_slot = None
+        
+        return False
+
+    def order_domain_values(self, var, assignment):
+        # LCV heuristic: order domain values by how constraining they are
+        def count_conflicts(value):
+            conflicts = 0
+            for other_var in self.sessions:
+                if other_var != var and other_var not in assignment:
+                    for other_value in self.domains[other_var]:
+                        if not self.is_consistent(var, value, other_var, other_value):
+                            conflicts += 1
+            return conflicts
+        
+        return sorted(self.domains[var], key=count_conflicts)
+
+    def is_value_consistent(self, var, value, assignment):
+        for other_var, other_value in assignment.items():
+            if not self.is_consistent(var, value, other_var, other_value):
+                return False
+        return True
+
+    def check_consecutive_sessions(self, assignment):
+        teacher_slots = {}
+        
+        for session, time_slot in assignment.items():
+            teacher = session.teacher
+            if teacher not in teacher_slots:
+                teacher_slots[teacher] = {}
+            
+            day = time_slot.day
+            if day not in teacher_slots[teacher]:
+                teacher_slots[teacher][day] = []
+            
+            teacher_slots[teacher][day].append(time_slot.slot)
+        
+        for teacher, days in teacher_slots.items():
+            for day, slots in days.items():
+                slots.sort()
+                consecutive = 1
+                for i in range(1, len(slots)):
+                    if slots[i] == slots[i-1] + 1:
+                        consecutive += 1
+                        if consecutive > 3:
+                            return False
+                    else:
+                        consecutive = 1
+        
+        return True
+
+    def solve(self):
+        self.initialize_sessions()
+        self.initialize_domains()
+        self.ac3()
+        solution = self.backtracking_search()
+        
+        if solution:
+            # Convert solution to a readable timetable
+            timetable = {day: {slot: [] for slot in range(1, self.slots_per_day[day] + 1)} for day in self.days}
+            
+            for session, time_slot in solution.items():
+                timetable[time_slot.day][time_slot.slot].append({
+                    'course': session.course.name,
+                    'type': session.session_type,
+                    'teacher': session.teacher
+                })
+            
+            return timetable
+        
+        return None
+    
+    from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from csp_solver import CSPSolver
+
+app = Flask(__name__)
+app.secret_key = 'csp_timetable_scheduler'
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/generate', methods=['POST'])
+def generate_timetable():
+    try:
+        solver = CSPSolver()
+        timetable = solver.solve()
+        
+        if timetable:
+            return render_template('timetable.html', timetable=timetable)
+        else:
+            flash('Could not generate a valid timetable with the given constraints. Try relaxing some constraints.')
+            return redirect(url_for('index'))
+    except Exception as e:
+        flash(f'An error occurred: {str(e)}')
+        return redirect(url_for('index'))
+
+if __name__ == '__main__':
+    app.run(debug=True,port=3333)
+ 

@@ -29,7 +29,7 @@ class AIPlayer(Player):
     
     def __init__(self, piece_type, difficulty=5):
         super().__init__(piece_type)
-        self.difficulty = difficulty  # Depth for minimax algorithm
+        self.difficulty = difficulty  
     
     def get_move(self, game):
         """Get the best column to drop a piece using minimax algorithm."""
